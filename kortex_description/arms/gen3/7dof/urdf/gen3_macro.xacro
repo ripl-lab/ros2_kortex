@@ -451,6 +451,28 @@
       <axis
         xyz="0 0 0" />
     </joint>
+    <joint name="${prefix}kinova_mount_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 ${PI} 0" />
+      <parent link="${prefix}end_effector_link" />
+      <child link="${prefix}kinova_mount_link" />
+    </joint>
+    <link name="${prefix}kinova_mount_link">
+      <visual>
+        <origin xyz="0 0 -0.03" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="0.001 0.001 0.001" />
+        </geometry>
+        <material name="">
+          <color rgba="0.75294 0.75294 0.75294 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 -0.03" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="0.001 0.001 0.001" />
+        </geometry>
+      </collision>
+    </link>
     <xacro:if value="${vision}">
       <!-- sim camera needs to be rotated which might not apply to built in vision module -->
       <xacro:if value="${sim_ignition}">
