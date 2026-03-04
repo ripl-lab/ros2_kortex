@@ -5,6 +5,7 @@
   <!-- Propagate last link name information because it is the gripper's parent link -->
   <xacro:property name="last_arm_link" value="end_effector_link"/>
   <xacro:property name="PI" value="3.1415926535897931"/>
+  <xacro:include filename="$(find clarius_description)/urdf/clarius_macro.xacro" />
 
   <xacro:macro name="load_arm" params="
     parent
@@ -473,6 +474,9 @@
         </geometry>
       </collision>
     </link>
+    <xacro:load_clarius parent="${prefix}kinova_mount_link" prefix="${prefix}">
+      <origin xyz="0 0 -0.05" rpy="0 ${PI} ${PI/2}" />
+    </xacro:load_clarius>
     <xacro:if value="${vision}">
       <!-- sim camera needs to be rotated which might not apply to built in vision module -->
       <xacro:if value="${sim_ignition}">
