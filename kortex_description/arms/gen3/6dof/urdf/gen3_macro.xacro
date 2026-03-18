@@ -360,13 +360,13 @@
         xyz="0 0 0" />
     </joint>
     <joint name="${prefix}kinova_mount_joint" type="fixed">
-      <origin xyz="0 0 -0.03" rpy="0 ${PI} 0" />
+      <origin xyz="0 0 0" rpy="0 ${PI} 0" />
       <parent link="${prefix}end_effector_link" />
       <child link="${prefix}kinova_mount_link" />
     </joint>
     <link name="${prefix}kinova_mount_link">
       <visual>
-        <origin xyz="0 0 -0.03" rpy="0 0 0" />
+        <origin xyz="0 0 -0.038" rpy="0 0 0" />
         <geometry>
           <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="0.001 0.001 0.001" />
         </geometry>
@@ -375,14 +375,14 @@
         </material>
       </visual>
       <collision>
-        <origin xyz="0 0 -0.03" rpy="0 0 0" />
+        <origin xyz="0 0 -0.038" rpy="0 0 0" />
         <geometry>
           <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="0.001 0.001 0.001" />
         </geometry>
       </collision>
     </link>
     <xacro:load_clarius parent="${prefix}kinova_mount_link" prefix="${prefix}">
-      <origin xyz="0 0 -0.05" rpy="0 ${PI} ${PI/2}" />
+      <origin xyz="0 0 -0.058" rpy="0 ${PI} ${PI/2}" />
     </xacro:load_clarius>
     <!-- TODO(destogl) this probably collides with camera URDF -->
     <xacro:if value="${vision}">
