@@ -50,10 +50,18 @@ def generate_launch_description():
             description="Robot's dof",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "vision",
+            default_value="false",
+            description="Whether to use the Gen3 vision module bracelet mesh",
+        )
+    )
 
     robot_type = LaunchConfiguration("robot_type")
     gripper = LaunchConfiguration("gripper")
     dof = LaunchConfiguration("dof")
+    vision = LaunchConfiguration("vision")
 
     robot_description_content = Command(
         [
@@ -75,6 +83,9 @@ def generate_launch_description():
             " ",
             "dof:=",
             dof,
+            " ",
+            "vision:=",
+            vision,
             " ",
         ]
     )
