@@ -453,29 +453,29 @@
         xyz="0 0 0" />
     </joint>
     <joint name="${prefix}kinova_mount_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 ${PI} 0" />
+      <origin xyz="0 0 0.003" rpy="0 ${PI} 0" />
       <parent link="${prefix}end_effector_link" />
       <child link="${prefix}kinova_mount_link" />
     </joint>
     <link name="${prefix}kinova_mount_link">
       <visual>
-        <origin xyz="0 0 -0.038" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="-1.5708 0 0" />
         <geometry>
-          <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="0.001 0.001 0.001" />
+          <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="1 1 1" />
         </geometry>
         <material name="">
           <color rgba="0.75294 0.75294 0.75294 1" />
         </material>
       </visual>
       <collision>
-        <origin xyz="0 0 -0.038" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="-1.5708 0 0" />
         <geometry>
-          <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="0.001 0.001 0.001" />
+          <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="1 1 1" />
         </geometry>
       </collision>
     </link>
     <xacro:load_clarius parent="${prefix}kinova_mount_link" prefix="${prefix}">
-      <origin xyz="0 0 -0.058" rpy="0 ${PI} ${PI/2}" />
+      <origin xyz="0 0 -0.115" rpy="${PI/2} ${PI} ${PI}" />
     </xacro:load_clarius>
     <xacro:if value="${vision}">
       <!-- sim camera needs to be rotated which might not apply to built in vision module -->
