@@ -68,6 +68,91 @@ ROS2 KINOVA KORTEX™ is the official ROS2 package to interact with KINOVA KORTE
 
 **Note:** Gazebo classic support was kept on the `humble` branch of this repository
 
+---
+
+## CLARIUS SETUP
+
+**Note:** For MoveIt planing and replay rosbag only for now
+
+1. Make sure that `colcon`, its extensions, and `vcs` are installed:
+
+    ```bash
+    sudo apt install python3-colcon-common-extensions python3-vcstool
+    ```
+
+2. Create a new ROS2 workspace:
+
+    ```bash
+    export COLCON_WS=~/workspace/ros2_kortex_ws
+    mkdir -p $COLCON_WS/src
+    ```
+
+3. Pull relevant packages:
+   
+    ```bash
+    cd $COLCON_WS
+    git clone -b tz/clarius_scanner --single-branch git@github.com:ripl-lab/ros2_kortex.git src/ros2_kortex
+    git clone git@github.com:ripl-lab/clarius_description.git
+    vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.$ROS_DISTRO.repos
+    vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.$ROS_DISTRO.repos
+    ```
+
+4. Install MoveIt 2
+
+    ```bash
+    sudo apt install ros-humble-moveit 
+    ```
+
+5. Install dependencies, compile, and source the workspace:
+  - `--executor sequential` is recomended to prevent crashing your laptop
+
+    ```bash
+    rosdep install --ignore-src --from-paths src -y -r
+    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential
+    ```
+
+6. Source the previously built workspace using the following command:
+   
+    ```bash
+    echo 'source ~/workspace/ros2_kortex_ws/install/setup.bash' >> ~/.bashrc
+    ```
+
+7. Launch the bringup to verify 
+
+    ```bash
+    ros2 launch kortex_description view_robot.launch.py
+    ```
+
+### MoveIt
+
+- For visualization 
+
+    ```bash
+    ros2 launch kinova_gen3_7dof_robotiq_2f_85_moveit_config robot_no_gripper.launch.py \
+      robot_ip:=yyy.yyy.yyy.yyy \
+      use_fake_hardware:=true
+    ```
+- For real robot
+
+    ```bash
+    ros2 launch kinova_gen3_7dof_robotiq_2f_85_moveit_config robot_no_gripper.launch.py \
+      robot_ip:=192.168.1.10
+    ```
+
+### Bag Replay
+
+To replay recorded Gen3 transforms together with a Clarius processed image:
+
+```bash
+ros2 launch kortex_bringup replay_kortex_bag.launch.py \
+  bag:=/absolute/path/to/rosbag
+```
+
+The launch uses simulated time and replays `/tf`, `/tf_static`, and
+`/clarius/processed_image`. It defaults to a 7-DoF Gen3 without a gripper. Do not run hardware or fake controllers simultaneously because their TF output can compete with the recorded transforms.
+
+
+---
 
 ## Getting started
 
