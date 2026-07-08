@@ -34,26 +34,31 @@ from launch_ros.substitutions import FindPackageShare
 
 import yaml
 import os
+import tempfile
 
 
-def load_and_apply_prefix(yaml_path, prefix):
+def load_and_apply_prefix(yaml_path, prefix, robot_description, substitutions=None):
     with open(yaml_path) as f:
         text = f.read()
     # Replace ${prefix} placeholders in the text
     text = text.replace("${prefix}", prefix)
+    for key, value in (substitutions or {}).items():
+        text = text.replace("${" + key + "}", value)
     data = yaml.safe_load(text)
-    # Save the resolved YAML to a new file
-    dir_name = os.path.dirname(os.path.abspath(yaml_path))
-    resolved_name = f"{prefix}ros2_controllers.yaml"
-    debug_file = os.path.join(dir_name, resolved_name)
-    try:
-        with open(debug_file, "w") as out:
-            yaml.dump(data, out, default_flow_style=False)
-        print(f"[DEBUG] Saved resolved YAML to: {debug_file}")
-    except Exception as e:
-        print(f"[WARN] Could not save resolved YAML: {e}")
-
-    return PathJoinSubstitution([dir_name, resolved_name])
+    admittance_nodes = [
+        f"{prefix}/admittance_controller" if prefix else "/admittance_controller",
+        f"/{prefix}/admittance_controller" if prefix else "/admittance_controller",
+    ]
+    for admittance_node in admittance_nodes:
+        if admittance_node in data:
+            data[admittance_node]["ros__parameters"]["robot_description"] = robot_description
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix="kortex_controllers_", suffix=".yaml", delete=False
+    ) as out:
+        yaml.dump(data, out, default_flow_style=False)
+        resolved_path = out.name
+    print(f"[DEBUG] Saved resolved YAML to: {resolved_path}")
+    return resolved_path
 
 
 def launch_setup(context, *args, **kwargs):
@@ -76,9 +81,16 @@ def launch_setup(context, *args, **kwargs):
     robot_pos_controller = LaunchConfiguration("robot_pos_controller")
     robot_hand_controller = LaunchConfiguration("robot_hand_controller")
     fault_controller = LaunchConfiguration("fault_controller")
+    wrench_injector = LaunchConfiguration("wrench_injector")
     launch_rviz = LaunchConfiguration("launch_rviz")
     use_internal_bus_gripper_comm = LaunchConfiguration("use_internal_bus_gripper_comm")
+    initial_positions_file = LaunchConfiguration("initial_positions_file")
     gripper_joint_name = LaunchConfiguration("gripper_joint_name")
+    include_clarius = LaunchConfiguration("include_clarius")
+    payload_cog_x = LaunchConfiguration("payload_cog_x")
+    payload_cog_y = LaunchConfiguration("payload_cog_y")
+    payload_cog_z = LaunchConfiguration("payload_cog_z")
+    payload_weight = LaunchConfiguration("payload_weight")
 
     # if we are using fake hardware then we can't use the internal gripper communications of the hardware
     use_fake_hardware_value = use_fake_hardware.perform(context)
@@ -129,6 +141,12 @@ def launch_setup(context, *args, **kwargs):
             "gripper_joint_name:=",
             gripper_joint_name,
             " ",
+            "initial_positions_file:=",
+            initial_positions_file,
+            " ",
+            "include_clarius:=",
+            include_clarius,
+            " ",
         ]
     )
     robot_description = {"robot_description": robot_description_content}
@@ -154,7 +172,20 @@ def launch_setup(context, *args, **kwargs):
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[load_and_apply_prefix(robot_controllers_str, prefix_str)],
+        parameters=[
+            load_and_apply_prefix(
+                robot_controllers_str,
+                prefix_str,
+                robot_description_content.perform(context),
+                {
+                    "payload_cog_x": payload_cog_x.perform(context),
+                    "payload_cog_y": payload_cog_y.perform(context),
+                    "payload_cog_z": payload_cog_z.perform(context),
+                    "payload_weight": payload_weight.perform(context),
+                    "gripper_joint_name": gripper_joint_name.perform(context),
+                },
+            )
+        ],
         namespace=prefix_str,
         remappings=[
             ("~/robot_description", remapped_robot_description),
@@ -227,6 +258,22 @@ def launch_setup(context, *args, **kwargs):
         arguments=[fault_controller, "-c", controller_manager_name],
         condition=IfCondition(use_internal_bus_gripper_comm),
     )
+    wrench_injector_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[wrench_injector, "-c", controller_manager_name],
+        condition=IfCondition(
+            PythonExpression(
+                [
+                    "'",
+                    wrench_injector,
+                    "' != '' and '",
+                    fake_sensor_commands,
+                    "' == 'true'",
+                ]
+            )
+        ),
+    )
 
     nodes_to_start = [
         control_node,
@@ -236,6 +283,7 @@ def launch_setup(context, *args, **kwargs):
         robot_traj_controller_spawner,
         robot_pos_controller_spawner,
         fault_controller_spawner,
+        wrench_injector_spawner,
     ]
     start_robot_hand_controller = gripper.perform(context) != ""
     # Conditionally add robot_hand_controller_spawner
@@ -382,6 +430,57 @@ def generate_launch_description():
             "fault_controller",
             default_value="fault_controller",
             description="Name of the 'fault controller.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_injector",
+            default_value="",
+            description="Optional fake sensor command controller to start.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "initial_positions_file",
+            default_value=PathJoinSubstitution(
+                [FindPackageShare("kortex_description"), "config", "initial_positions.yaml"]
+            ),
+            description="Initial joint positions used by fake hardware.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_cog_x",
+            default_value="0.0",
+            description="Payload center of gravity X in the gravity compensation frame.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_cog_y",
+            default_value="0.0",
+            description="Payload center of gravity Y in the gravity compensation frame.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_cog_z",
+            default_value="0.08",
+            description="Payload center of gravity Z in the gravity compensation frame.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_weight",
+            default_value="9.1",
+            description="Payload weight in newtons for admittance gravity compensation.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "include_clarius",
+            default_value="true",
+            description="Attach the Clarius probe model to the Gen3 wrist mount.",
         )
     )
     declared_arguments.append(

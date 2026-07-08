@@ -1,0 +1,107 @@
+${prefix}/controller_manager:
+  ros__parameters:
+    update_rate: 1000
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    admittance_controller:
+      type: admittance_controller/AdmittanceController
+
+    wrench_injector:
+      type: forward_command_controller/MultiInterfaceForwardCommandController
+
+    robotiq_gripper_controller:
+      type: position_controllers/GripperActionController
+
+    fault_controller:
+      type: picknik_reset_fault_controller/PicknikResetFaultController
+
+${prefix}/joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - ${prefix}joint_1
+      - ${prefix}joint_2
+      - ${prefix}joint_3
+      - ${prefix}joint_4
+      - ${prefix}joint_5
+      - ${prefix}joint_6
+      - ${prefix}joint_7
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+
+${prefix}/admittance_controller:
+  ros__parameters:
+    joints:
+      - ${prefix}joint_1
+      - ${prefix}joint_2
+      - ${prefix}joint_3
+      - ${prefix}joint_4
+      - ${prefix}joint_5
+      - ${prefix}joint_6
+      - ${prefix}joint_7
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    chainable_command_interfaces: [position, velocity]
+
+    kinematics:
+      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
+      plugin_package: kinematics_interface
+      base: ${prefix}base_link
+      tip: ${prefix}end_effector_link
+      group_name: arm
+      alpha: 0.0005
+
+    ft_sensor:
+      name: ${prefix}tool_external_wrench
+      frame:
+        id: ${prefix}end_effector_link 
+        external: false 
+        filter_coefficient: 1.0
+    control:
+      frame:
+        id: ${prefix}end_effector_link
+        external: false
+
+    fixed_world_frame:
+      frame:
+        id: ${prefix}base_link
+        external: false
+
+    gravity_compensation:
+      frame:
+        id: ${prefix}end_effector_link
+        external: false
+      CoG:
+        pos: [${payload_cog_x}, ${payload_cog_y}, ${payload_cog_z}]
+        force: ${payload_weight}
+
+    admittance:
+      selected_axes: [true, false, false, false, false, false]
+      mass: [20.0, 20.0, 20.0, 10.0, 10.0, 10.0]
+      damping_ratio: [4.0, 4.0, 4.0, 4.0, 4.0, 4.0]
+      stiffness: [80.0, 80.0, 80.0, 20.0, 20.0, 20.0]
+      joint_damping: 12.0
+
+${prefix}/wrench_injector:
+  ros__parameters:
+    joint: ${prefix}tool_external_wrench
+    interface_names:
+      - force.x
+      - force.y
+      - force.z
+      - torque.x
+      - torque.y
+      - torque.z
+
+${prefix}/robotiq_gripper_controller:
+  ros__parameters:
+    default: true
+    joint: ${prefix}${gripper_joint_name}
+    allow_stalling: true

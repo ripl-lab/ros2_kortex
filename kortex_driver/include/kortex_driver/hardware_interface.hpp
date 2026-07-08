@@ -27,6 +27,8 @@
 #pragma once
 
 #include <atomic>
+#include <array>
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -139,6 +141,27 @@ private:
   std::vector<double> arm_velocities_;
   std::vector<double> arm_efforts_;
 
+  // Estimated external wrench reported by the Kortex cyclic feedback.
+  std::array<double, 6> tool_external_wrench_{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  std::array<double, 6> wrench_bias_{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  double wrench_filter_coefficient_ = 0.05;
+  double force_deadband_ = 2.0;
+  double torque_deadband_ = 0.2;
+  double force_limit_ = 40.0;
+  double torque_limit_ = 8.0;
+  double force_stop_threshold_ = 80.0;
+  double torque_stop_threshold_ = 15.0;
+  double feedback_timeout_seconds_ = 0.1;
+  uint32_t last_feedback_frame_id_ = 0;
+  std::chrono::steady_clock::time_point last_feedback_time_;
+
+  // Final guard on all joint-position controllers, including admittance.
+  double max_joint_command_velocity_ = 0.25;
+  double joint_limit_margin_ = 0.02;
+  std::vector<double> joint_position_min_;
+  std::vector<double> joint_position_max_;
+  std::vector<double> last_sent_positions_;
+
   // twist command interfaces
   std::vector<double> twist_commands_;
 
@@ -221,6 +244,8 @@ private:
     k_api::Base::ServoingMode arm_mode, double position, double velocity, double force);
 
   void readGripperPosition();
+  bool updateToolExternalWrench();
+  void limitJointPositionCommands(double period_seconds);
 };
 
 }  // namespace kortex_driver

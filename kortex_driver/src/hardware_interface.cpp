@@ -23,6 +23,8 @@
 //----------------------------------------------------------------------
 
 #include <chrono>
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <exception>
 #include <limits>
@@ -32,6 +34,7 @@
 
 #include "kortex_driver/hardware_interface.hpp"
 #include "kortex_driver/kortex_math_util.hpp"
+#include "kortex_driver/wrench_utils.hpp"
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -39,6 +42,25 @@
 namespace
 {
 const rclcpp::Logger LOGGER = rclcpp::get_logger("KortexMultiInterfaceHardware");
+
+double get_double_parameter(
+  const hardware_interface::HardwareInfo & info, const std::string & name, double default_value)
+{
+  const auto parameter = info.hardware_parameters.find(name);
+  return parameter == info.hardware_parameters.end() ? default_value : std::stod(parameter->second);
+}
+
+double parse_limit(const std::string & value, double fallback)
+{
+  try
+  {
+    return value.empty() ? fallback : std::stod(value);
+  }
+  catch (const std::exception &)
+  {
+    return fallback;
+  }
+}
 }
 
 namespace kortex_driver
@@ -94,6 +116,25 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   }
 
   info_ = info;
+  wrench_filter_coefficient_ =
+    std::clamp(get_double_parameter(info_, "wrench_filter_coefficient", 0.05), 0.0, 1.0);
+  force_deadband_ = get_double_parameter(info_, "wrench_force_deadband", 2.0);
+  torque_deadband_ = get_double_parameter(info_, "wrench_torque_deadband", 0.2);
+  force_limit_ = get_double_parameter(info_, "wrench_force_limit", 40.0);
+  torque_limit_ = get_double_parameter(info_, "wrench_torque_limit", 8.0);
+  force_stop_threshold_ = get_double_parameter(info_, "wrench_force_stop_threshold", 80.0);
+  torque_stop_threshold_ = get_double_parameter(info_, "wrench_torque_stop_threshold", 15.0);
+  feedback_timeout_seconds_ = get_double_parameter(info_, "feedback_timeout", 0.1);
+  max_joint_command_velocity_ =
+    get_double_parameter(info_, "max_joint_command_velocity", 0.25);
+  joint_limit_margin_ = get_double_parameter(info_, "joint_limit_margin", 0.02);
+  const std::array<std::string, 6> bias_names = {
+    "wrench_bias_force_x", "wrench_bias_force_y", "wrench_bias_force_z",
+    "wrench_bias_torque_x", "wrench_bias_torque_y", "wrench_bias_torque_z"};
+  for (size_t index = 0; index < bias_names.size(); ++index)
+  {
+    wrench_bias_[index] = get_double_parameter(info_, bias_names[index], 0.0);
+  }
   // The robot's IP address.
   std::string robot_ip = info_.hardware_parameters["robot_ip"];
   if (robot_ip.empty())
@@ -256,6 +297,21 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   arm_commands_efforts_.resize(actuator_count_, std::numeric_limits<double>::quiet_NaN());
   arm_joints_control_level_.resize(
     actuator_count_, integration_lvl_t::UNDEFINED);  // start in undefined
+  joint_position_min_.reserve(actuator_count_);
+  joint_position_max_.reserve(actuator_count_);
+  for (const auto & joint : info_.joints)
+  {
+    if (joint.name == gripper_joint_name_)
+    {
+      continue;
+    }
+    const auto & position_interface = joint.command_interfaces.front();
+    joint_position_min_.push_back(
+      parse_limit(position_interface.min, -std::numeric_limits<double>::infinity()));
+    joint_position_max_.push_back(
+      parse_limit(position_interface.max, std::numeric_limits<double>::infinity()));
+  }
+  last_sent_positions_.resize(actuator_count_, std::numeric_limits<double>::quiet_NaN());
   gripper_command_position_ = std::numeric_limits<double>::quiet_NaN();
   gripper_position_ = std::numeric_limits<double>::quiet_NaN();
 
@@ -329,6 +385,15 @@ KortexMultiInterfaceHardware::export_state_interfaces()
       arm_joint_names[i], hardware_interface::HW_IF_VELOCITY, &arm_velocities_[i]));
     state_interfaces.emplace_back(hardware_interface::StateInterface(
       arm_joint_names[i], hardware_interface::HW_IF_EFFORT, &arm_efforts_[i]));
+  }
+
+  const std::array<std::string, 6> wrench_interfaces = {
+    "force.x", "force.y", "force.z", "torque.x", "torque.y", "torque.z"};
+  for (size_t index = 0; index < wrench_interfaces.size(); ++index)
+  {
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+      joints_prefix_ + "tool_external_wrench", wrench_interfaces[index],
+      &tool_external_wrench_[index]));
   }
 
   // state interface which reports if robot is faulted
@@ -601,7 +666,7 @@ return_type KortexMultiInterfaceHardware::perform_command_mode_switch(
   {
     joint_based_controller_running_ = false;
     arm_commands_positions_ = arm_positions_;
-    arm_commands_velocities_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::fill(arm_commands_velocities_.begin(), arm_commands_velocities_.end(), 0.0);
   }
   if (stop_twist_controller_)
   {
@@ -625,7 +690,8 @@ return_type KortexMultiInterfaceHardware::perform_command_mode_switch(
     arm_mode_ = k_api::Base::ServoingMode::LOW_LEVEL_SERVOING;
     twist_controller_running_ = false;
     arm_commands_positions_ = arm_positions_;
-    arm_commands_velocities_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    last_sent_positions_ = arm_positions_;
+    std::fill(arm_commands_velocities_.begin(), arm_commands_velocities_.end(), 0.0);
     joint_based_controller_running_ = true;
     // refresh feedback
     feedback_ = base_cyclic_.RefreshFeedback();
@@ -793,6 +859,11 @@ return_type KortexMultiInterfaceHardware::read(
     //       feedback_.actuators(i).warning_bank_a() + feedback_.actuators(i).warning_bank_b());
   }
 
+  if (!updateToolExternalWrench())
+  {
+    return return_type::ERROR;
+  }
+
   // add all base's faults and warnings into series
   in_fault_ += (feedback_.base().fault_bank_a() + feedback_.base().fault_bank_b());
 
@@ -818,7 +889,7 @@ void KortexMultiInterfaceHardware::readGripperPosition()
 }
 
 return_type KortexMultiInterfaceHardware::write(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   if (block_write)
   {
@@ -899,6 +970,7 @@ return_type KortexMultiInterfaceHardware::write(
 
       if (joint_based_controller_running_)
       {
+        limitJointPositionCommands(period.seconds());
         // send commands to the joints
         sendJointCommands();
       }
@@ -927,6 +999,62 @@ return_type KortexMultiInterfaceHardware::write(
   }
 
   return return_type::OK;
+}
+
+bool KortexMultiInterfaceHardware::updateToolExternalWrench()
+{
+  const auto now = std::chrono::steady_clock::now();
+  const uint32_t frame_id = feedback_.frame_id();
+  if (frame_id != last_feedback_frame_id_ || last_feedback_time_.time_since_epoch().count() == 0)
+  {
+    last_feedback_frame_id_ = frame_id;
+    last_feedback_time_ = now;
+  }
+  else if (
+    feedback_timeout_seconds_ > 0.0 &&
+    std::chrono::duration<double>(now - last_feedback_time_).count() > feedback_timeout_seconds_)
+  {
+    RCLCPP_ERROR(LOGGER, "Kortex cyclic feedback is stale; refusing to update commands.");
+    return false;
+  }
+
+  const auto raw = extractToolExternalWrench(feedback_.base());
+  if (!conditionWrench(
+        raw, wrench_bias_, wrench_filter_coefficient_, force_deadband_, torque_deadband_,
+        force_limit_, torque_limit_, force_stop_threshold_, torque_stop_threshold_,
+        tool_external_wrench_))
+  {
+    RCLCPP_ERROR(LOGGER, "Kortex external wrench is non-finite or above a stop threshold.");
+    return false;
+  }
+  return true;
+}
+
+void KortexMultiInterfaceHardware::limitJointPositionCommands(double period_seconds)
+{
+  if (period_seconds <= 0.0 || max_joint_command_velocity_ <= 0.0)
+  {
+    return;
+  }
+  const double max_step = max_joint_command_velocity_ * period_seconds;
+  for (size_t index = 0; index < actuator_count_; ++index)
+  {
+    if (!std::isfinite(arm_commands_positions_[index]))
+    {
+      arm_commands_positions_[index] = arm_positions_[index];
+    }
+    if (!std::isfinite(last_sent_positions_[index]))
+    {
+      last_sent_positions_[index] = arm_positions_[index];
+    }
+    arm_commands_positions_[index] = std::clamp(
+      arm_commands_positions_[index], joint_position_min_[index] + joint_limit_margin_,
+      joint_position_max_[index] - joint_limit_margin_);
+    arm_commands_positions_[index] = std::clamp(
+      arm_commands_positions_[index], last_sent_positions_[index] - max_step,
+      last_sent_positions_[index] + max_step);
+    last_sent_positions_[index] = arm_commands_positions_[index];
+  }
 }
 
 void KortexMultiInterfaceHardware::prepareCommands()

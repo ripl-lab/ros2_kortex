@@ -17,6 +17,22 @@
     <xacro:arg name="gripper_joint_name" default="finger_joint" />
     <xacro:arg name="gripper_max_velocity" default="100.0" />
     <xacro:arg name="gripper_max_force" default="100.0" />
+    <xacro:arg name="wrench_filter_coefficient" default="0.05" />
+    <xacro:arg name="wrench_force_deadband" default="2.0" />
+    <xacro:arg name="wrench_torque_deadband" default="0.2" />
+    <xacro:arg name="wrench_force_limit" default="40.0" />
+    <xacro:arg name="wrench_torque_limit" default="8.0" />
+    <xacro:arg name="wrench_force_stop_threshold" default="80.0" />
+    <xacro:arg name="wrench_torque_stop_threshold" default="15.0" />
+    <xacro:arg name="wrench_bias_force_x" default="0.0" />
+    <xacro:arg name="wrench_bias_force_y" default="0.0" />
+    <xacro:arg name="wrench_bias_force_z" default="0.0" />
+    <xacro:arg name="wrench_bias_torque_x" default="0.0" />
+    <xacro:arg name="wrench_bias_torque_y" default="0.0" />
+    <xacro:arg name="wrench_bias_torque_z" default="0.0" />
+    <xacro:arg name="feedback_timeout" default="0.1" />
+    <xacro:arg name="max_joint_command_velocity" default="0.25" />
+    <xacro:arg name="joint_limit_margin" default="0.02" />
     <xacro:arg name="sim_gazebo" default="false" />
     <xacro:arg name="sim_ignition" default="false" />
     <xacro:arg name="sim_isaac" default="false" />
@@ -25,6 +41,7 @@
     <xacro:arg name="fake_sensor_commands" default="false" />
     <xacro:arg name="use_internal_bus_gripper_comm" default="false" />
     <xacro:arg name="use_external_cable" default="false" />
+    <xacro:arg name="include_clarius" default="true" />
 
     <xacro:include filename="$(find kortex_description)/robots/kortex_robot.xacro" />
     <!-- initial position for simulations (Mock Hardware, Gazebo, Ignition) -->
@@ -39,6 +56,22 @@
         gripper_joint_name="$(arg gripper_joint_name)"
         gripper_max_velocity="$(arg gripper_max_velocity)"
         gripper_max_force="$(arg gripper_max_force)"
+        wrench_filter_coefficient="$(arg wrench_filter_coefficient)"
+        wrench_force_deadband="$(arg wrench_force_deadband)"
+        wrench_torque_deadband="$(arg wrench_torque_deadband)"
+        wrench_force_limit="$(arg wrench_force_limit)"
+        wrench_torque_limit="$(arg wrench_torque_limit)"
+        wrench_force_stop_threshold="$(arg wrench_force_stop_threshold)"
+        wrench_torque_stop_threshold="$(arg wrench_torque_stop_threshold)"
+        wrench_bias_force_x="$(arg wrench_bias_force_x)"
+        wrench_bias_force_y="$(arg wrench_bias_force_y)"
+        wrench_bias_force_z="$(arg wrench_bias_force_z)"
+        wrench_bias_torque_x="$(arg wrench_bias_torque_x)"
+        wrench_bias_torque_y="$(arg wrench_bias_torque_y)"
+        wrench_bias_torque_z="$(arg wrench_bias_torque_z)"
+        feedback_timeout="$(arg feedback_timeout)"
+        max_joint_command_velocity="$(arg max_joint_command_velocity)"
+        joint_limit_margin="$(arg joint_limit_margin)"
         dof="$(arg dof)"
         vision="$(arg vision)"
         robot_ip="$(arg robot_ip)"
@@ -56,6 +89,7 @@
         sim_ignition="$(arg sim_ignition)"
         sim_isaac="$(arg sim_isaac)"
         use_external_cable="$(arg use_external_cable)"
+        include_clarius="$(arg include_clarius)"
         initial_positions="${xacro.load_yaml(initial_positions_file)}" >
         <origin xyz="0 0 0" rpy="0 0 0" />  <!-- position robot in the world -->
     </xacro:load_robot>

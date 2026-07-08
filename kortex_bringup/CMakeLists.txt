@@ -7,10 +7,16 @@ find_package(ament_cmake_python REQUIRED)
 # Install Python executables
 install(PROGRAMS
   scripts/test_huge_joint_space_jump.py
+  scripts/inject_wrench.py
+  scripts/wrench_stamped_publisher.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY config launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY doc
   DESTINATION share/${PROJECT_NAME}
 )
 

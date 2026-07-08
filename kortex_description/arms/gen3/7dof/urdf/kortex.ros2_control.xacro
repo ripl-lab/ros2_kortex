@@ -24,6 +24,22 @@
     gripper_joint_name
     gripper_max_velocity:=100.0
     gripper_max_force:=100.0
+    wrench_filter_coefficient:=0.05
+    wrench_force_deadband:=2.0
+    wrench_torque_deadband:=0.2
+    wrench_force_limit:=40.0
+    wrench_torque_limit:=8.0
+    wrench_force_stop_threshold:=80.0
+    wrench_torque_stop_threshold:=15.0
+    wrench_bias_force_x:=0.0
+    wrench_bias_force_y:=0.0
+    wrench_bias_force_z:=0.0
+    wrench_bias_torque_x:=0.0
+    wrench_bias_torque_y:=0.0
+    wrench_bias_torque_z:=0.0
+    feedback_timeout:=0.1
+    max_joint_command_velocity:=0.25
+    joint_limit_margin:=0.02
     moveit_active:=false">
 
     <ros2_control name="${name}" type="system">
@@ -41,7 +57,7 @@
         </xacro:if>
         <xacro:if value="${use_fake_hardware}">
           <plugin>mock_components/GenericSystem</plugin>
-          <param name="fake_sensor_commands">${fake_sensor_commands}</param>
+          <param name="mock_sensor_commands">${fake_sensor_commands}</param>
           <param name="state_following_offset">0.0</param>
         </xacro:if>
         <xacro:unless value="${use_fake_hardware or sim_gazebo or sim_ignition or sim_isaac}">
@@ -59,6 +75,22 @@
           <param name="gripper_joint_name">${gripper_joint_name}</param>
           <param name="gripper_max_velocity">${gripper_max_velocity}</param>
           <param name="gripper_max_force">${gripper_max_force}</param>
+          <param name="wrench_filter_coefficient">${wrench_filter_coefficient}</param>
+          <param name="wrench_force_deadband">${wrench_force_deadband}</param>
+          <param name="wrench_torque_deadband">${wrench_torque_deadband}</param>
+          <param name="wrench_force_limit">${wrench_force_limit}</param>
+          <param name="wrench_torque_limit">${wrench_torque_limit}</param>
+          <param name="wrench_force_stop_threshold">${wrench_force_stop_threshold}</param>
+          <param name="wrench_torque_stop_threshold">${wrench_torque_stop_threshold}</param>
+          <param name="wrench_bias_force_x">${wrench_bias_force_x}</param>
+          <param name="wrench_bias_force_y">${wrench_bias_force_y}</param>
+          <param name="wrench_bias_force_z">${wrench_bias_force_z}</param>
+          <param name="wrench_bias_torque_x">${wrench_bias_torque_x}</param>
+          <param name="wrench_bias_torque_y">${wrench_bias_torque_y}</param>
+          <param name="wrench_bias_torque_z">${wrench_bias_torque_z}</param>
+          <param name="feedback_timeout">${feedback_timeout}</param>
+          <param name="max_joint_command_velocity">${max_joint_command_velocity}</param>
+          <param name="joint_limit_margin">${joint_limit_margin}</param>
         </xacro:unless>
       </hardware>
       <joint name="${prefix}joint_1">
@@ -138,6 +170,14 @@
         <state_interface name="velocity"/>
         <state_interface name="effort"/>
       </joint>
+      <sensor name="${prefix}tool_external_wrench">
+        <state_interface name="force.x"/>
+        <state_interface name="force.y"/>
+        <state_interface name="force.z"/>
+        <state_interface name="torque.x"/>
+        <state_interface name="torque.y"/>
+        <state_interface name="torque.z"/>
+      </sensor>
       <xacro:unless value="${use_fake_hardware or sim_gazebo or sim_ignition or sim_isaac}">
         <xacro:if value="${use_internal_bus_gripper_comm}">
           <joint name="${prefix}${gripper_joint_name}">
