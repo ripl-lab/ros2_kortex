@@ -22,6 +22,10 @@ def generate_launch_description():
     payload_weight = LaunchConfiguration("payload_weight")
     include_clarius = LaunchConfiguration("include_clarius")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
+    feedback_timeout = LaunchConfiguration("feedback_timeout")
+    wrench_filter_coefficient = LaunchConfiguration("wrench_filter_coefficient")
+    wrench_force_deadband = LaunchConfiguration("wrench_force_deadband")
+    wrench_torque_deadband = LaunchConfiguration("wrench_torque_deadband")
     controller_payload_weight = PythonExpression(
         [
             "'0.0' if '",
@@ -58,6 +62,7 @@ def generate_launch_description():
                 ]
             ),
             "wrench_injector": "wrench_injector",
+            "tool_wrench_broadcaster": "tool_wrench_broadcaster",
             "gripper": gripper,
             "gripper_joint_name": gripper_joint_name,
             "use_internal_bus_gripper_comm": use_internal_bus_gripper_comm,
@@ -66,6 +71,10 @@ def generate_launch_description():
             "payload_cog_z": payload_cog_z,
             "payload_weight": controller_payload_weight,
             "include_clarius": include_clarius,
+            "feedback_timeout": feedback_timeout,
+            "wrench_filter_coefficient": wrench_filter_coefficient,
+            "wrench_force_deadband": wrench_force_deadband,
+            "wrench_torque_deadband": wrench_torque_deadband,
             "initial_positions_file": initial_positions_file,
             "launch_rviz": launch_rviz,
         }.items(),
@@ -121,18 +130,38 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "payload_cog_z",
-                default_value="0.08",
+                default_value="0.0473",
                 description="Payload center of gravity Z in end_effector_link.",
             ),
             DeclareLaunchArgument(
                 "payload_weight",
-                default_value="9.1",
+                default_value="0.925",
                 description="Payload weight in newtons for admittance gravity compensation.",
             ),
             DeclareLaunchArgument(
                 "include_clarius",
                 default_value="false",
                 description="Attach the Clarius probe model to the wrist mount.",
+            ),
+            DeclareLaunchArgument(
+                "feedback_timeout",
+                default_value="0.5",
+                description="Maximum seconds since the last successful Kortex cyclic feedback refresh.",
+            ),
+            DeclareLaunchArgument(
+                "wrench_filter_coefficient",
+                default_value="0.05",
+                description="Low-pass filter coefficient for Kortex estimated external wrench.",
+            ),
+            DeclareLaunchArgument(
+                "wrench_force_deadband",
+                default_value="2.0",
+                description="Force deadband in newtons for Kortex estimated external wrench.",
+            ),
+            DeclareLaunchArgument(
+                "wrench_torque_deadband",
+                default_value="0.2",
+                description="Torque deadband in newton-meters for Kortex estimated external wrench.",
             ),
             DeclareLaunchArgument(
                 "initial_positions_file",

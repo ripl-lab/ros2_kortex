@@ -82,11 +82,16 @@ def launch_setup(context, *args, **kwargs):
     robot_hand_controller = LaunchConfiguration("robot_hand_controller")
     fault_controller = LaunchConfiguration("fault_controller")
     wrench_injector = LaunchConfiguration("wrench_injector")
+    tool_wrench_broadcaster = LaunchConfiguration("tool_wrench_broadcaster")
     launch_rviz = LaunchConfiguration("launch_rviz")
     use_internal_bus_gripper_comm = LaunchConfiguration("use_internal_bus_gripper_comm")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
     gripper_joint_name = LaunchConfiguration("gripper_joint_name")
     include_clarius = LaunchConfiguration("include_clarius")
+    feedback_timeout = LaunchConfiguration("feedback_timeout")
+    wrench_filter_coefficient = LaunchConfiguration("wrench_filter_coefficient")
+    wrench_force_deadband = LaunchConfiguration("wrench_force_deadband")
+    wrench_torque_deadband = LaunchConfiguration("wrench_torque_deadband")
     payload_cog_x = LaunchConfiguration("payload_cog_x")
     payload_cog_y = LaunchConfiguration("payload_cog_y")
     payload_cog_z = LaunchConfiguration("payload_cog_z")
@@ -146,6 +151,18 @@ def launch_setup(context, *args, **kwargs):
             " ",
             "include_clarius:=",
             include_clarius,
+            " ",
+            "feedback_timeout:=",
+            feedback_timeout,
+            " ",
+            "wrench_filter_coefficient:=",
+            wrench_filter_coefficient,
+            " ",
+            "wrench_force_deadband:=",
+            wrench_force_deadband,
+            " ",
+            "wrench_torque_deadband:=",
+            wrench_torque_deadband,
             " ",
         ]
     )
@@ -274,6 +291,12 @@ def launch_setup(context, *args, **kwargs):
             )
         ),
     )
+    tool_wrench_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[tool_wrench_broadcaster, "-c", controller_manager_name],
+        condition=IfCondition(PythonExpression(["'", tool_wrench_broadcaster, "' != ''"])),
+    )
 
     nodes_to_start = [
         control_node,
@@ -284,6 +307,7 @@ def launch_setup(context, *args, **kwargs):
         robot_pos_controller_spawner,
         fault_controller_spawner,
         wrench_injector_spawner,
+        tool_wrench_broadcaster_spawner,
     ]
     start_robot_hand_controller = gripper.perform(context) != ""
     # Conditionally add robot_hand_controller_spawner
@@ -441,6 +465,13 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "tool_wrench_broadcaster",
+            default_value="",
+            description="Optional force-torque sensor broadcaster to start.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "initial_positions_file",
             default_value=PathJoinSubstitution(
                 [FindPackageShare("kortex_description"), "config", "initial_positions.yaml"]
@@ -481,6 +512,34 @@ def generate_launch_description():
             "include_clarius",
             default_value="true",
             description="Attach the Clarius probe model to the Gen3 wrist mount.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "feedback_timeout",
+            default_value="0.5",
+            description="Maximum seconds since the last successful Kortex cyclic feedback refresh.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_filter_coefficient",
+            default_value="0.05",
+            description="Low-pass filter coefficient for Kortex estimated external wrench.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_force_deadband",
+            default_value="2.0",
+            description="Force deadband in newtons for Kortex estimated external wrench.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_torque_deadband",
+            default_value="0.2",
+            description="Torque deadband in newton-meters for Kortex estimated external wrench.",
         )
     )
     declared_arguments.append(

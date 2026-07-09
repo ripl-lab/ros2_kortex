@@ -44,7 +44,7 @@
     wrench_bias_torque_x:=0.0
     wrench_bias_torque_y:=0.0
     wrench_bias_torque_z:=0.0
-    feedback_timeout:=0.1
+    feedback_timeout:=0.5
     max_joint_command_velocity:=0.25
     joint_limit_margin:=0.02
     gripper_com_port:=/dev/ttyUSB0

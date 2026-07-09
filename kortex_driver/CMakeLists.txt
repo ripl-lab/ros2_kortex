@@ -26,6 +26,7 @@ find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(kortex_api REQUIRED)
 
 #Current: only support Linux x86_64
@@ -68,6 +69,7 @@ ament_target_dependencies(
   hardware_interface
   pluginlib
   rclcpp
+  std_srvs
 )
 
 pluginlib_export_plugin_description_file(hardware_interface hardware_interface_plugin.xml)
@@ -102,5 +104,6 @@ ament_export_dependencies(
   kortex_api
   pluginlib
   rclcpp
+  std_srvs
 )
 ament_package()

@@ -30,7 +30,7 @@
     <xacro:arg name="wrench_bias_torque_x" default="0.0" />
     <xacro:arg name="wrench_bias_torque_y" default="0.0" />
     <xacro:arg name="wrench_bias_torque_z" default="0.0" />
-    <xacro:arg name="feedback_timeout" default="0.1" />
+    <xacro:arg name="feedback_timeout" default="0.5" />
     <xacro:arg name="max_joint_command_velocity" default="0.25" />
     <xacro:arg name="joint_limit_margin" default="0.02" />
     <xacro:arg name="sim_gazebo" default="false" />

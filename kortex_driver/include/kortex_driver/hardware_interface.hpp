@@ -32,11 +32,16 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/macros.hpp"
+#include "rclcpp/node.hpp"
 #include "rclcpp/time.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
@@ -116,6 +121,11 @@ public:
   return_type write(const rclcpp::Time & time, const rclcpp::Duration & period) final;
 
 private:
+  void recordFeedbackRefresh();
+  bool hasRecentFeedback() const;
+  void startWrenchBiasService();
+  void stopWrenchBiasService();
+
   k_api::TransportClientTcp transport_tcp_;
   k_api::RouterClient router_tcp_;
   k_api::SessionManager session_manager_;
@@ -143,7 +153,14 @@ private:
 
   // Estimated external wrench reported by the Kortex cyclic feedback.
   std::array<double, 6> tool_external_wrench_{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  std::array<double, 6> latest_raw_tool_external_wrench_{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
   std::array<double, 6> wrench_bias_{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  mutable std::mutex wrench_bias_mutex_;
+  bool has_latest_raw_wrench_ = false;
+  rclcpp::Node::SharedPtr wrench_bias_node_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr capture_wrench_bias_service_;
+  std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> wrench_bias_executor_;
+  std::thread wrench_bias_executor_thread_;
   double wrench_filter_coefficient_ = 0.05;
   double force_deadband_ = 2.0;
   double torque_deadband_ = 0.2;
@@ -151,7 +168,7 @@ private:
   double torque_limit_ = 8.0;
   double force_stop_threshold_ = 80.0;
   double torque_stop_threshold_ = 15.0;
-  double feedback_timeout_seconds_ = 0.1;
+  double feedback_timeout_seconds_ = 0.5;
   uint32_t last_feedback_frame_id_ = 0;
   std::chrono::steady_clock::time_point last_feedback_time_;
 

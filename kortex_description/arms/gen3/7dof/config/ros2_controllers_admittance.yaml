@@ -5,6 +5,9 @@ ${prefix}/controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
+    tool_wrench_broadcaster:
+      type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
+
     joint_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
@@ -35,6 +38,11 @@ ${prefix}/joint_trajectory_controller:
     state_publish_rate: 100.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
+
+${prefix}/tool_wrench_broadcaster:
+  ros__parameters:
+    sensor_name: ${prefix}tool_external_wrench
+    frame_id: ${prefix}end_effector_link
 
 ${prefix}/admittance_controller:
   ros__parameters:
@@ -83,11 +91,11 @@ ${prefix}/admittance_controller:
         force: ${payload_weight}
 
     admittance:
-      selected_axes: [true, false, false, false, false, false]
-      mass: [20.0, 20.0, 20.0, 10.0, 10.0, 10.0]
-      damping_ratio: [4.0, 4.0, 4.0, 4.0, 4.0, 4.0]
-      stiffness: [80.0, 80.0, 80.0, 20.0, 20.0, 20.0]
-      joint_damping: 12.0
+      selected_axes: [true, true, true, false, false, false]
+      mass: [8.0, 8.0, 8.0, 10.0, 10.0, 10.0]
+      damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+      stiffness: [40.0, 40.0, 40.0, 0.0, 0.0, 0.0]
+      joint_damping: 5.0
 
 ${prefix}/wrench_injector:
   ros__parameters:
