@@ -8,7 +8,7 @@ ARG RUN_CLARIUS_SETUP=true
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ROS_DISTRO=humble
 ENV COLCON_WS=/workspace/ros2_kortex_ws
-ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 ENV VIRTUAL_ENV=/workspace/ros2_kortex_ws/.venv
 ENV PATH=/workspace/ros2_kortex_ws/.venv/bin:${PATH}
 

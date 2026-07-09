@@ -154,7 +154,7 @@ def launch_setup(context, *args, **kwargs):
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[load_and_apply_prefix(robot_controllers_str, prefix_str)],
+        parameters=[robot_description, load_and_apply_prefix(robot_controllers_str, prefix_str)],
         namespace=prefix_str,
         remappings=[
             ("~/robot_description", remapped_robot_description),
