@@ -17,7 +17,8 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, ThisLaunchFileDir
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
@@ -59,6 +60,99 @@ def generate_launch_description():
             "robot_controller",
             default_value="joint_trajectory_controller",
             description="Robot controller to start.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "robot_pos_controller",
+            default_value="twist_controller",
+            description="Second robot controller to load inactive.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_injector",
+            default_value="",
+            description="Optional fake wrench command controller to start.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "tool_wrench_broadcaster",
+            default_value="",
+            description="Optional force-torque sensor broadcaster to start.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "initial_positions_file",
+            default_value=PathJoinSubstitution(
+                [FindPackageShare("kortex_description"), "config", "initial_positions.yaml"]
+            ),
+            description="Initial joint positions used by fake hardware.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_cog_x",
+            default_value="0.0",
+            description="Payload center of gravity X in the gravity compensation frame.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_cog_y",
+            default_value="0.0",
+            description="Payload center of gravity Y in the gravity compensation frame.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_cog_z",
+            default_value="0.08",
+            description="Payload center of gravity Z in the gravity compensation frame.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "payload_weight",
+            default_value="9.1",
+            description="Payload weight in newtons for admittance gravity compensation.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "include_clarius",
+            default_value="true",
+            description="Attach the Clarius probe model to the Gen3 wrist mount.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "feedback_timeout",
+            default_value="0.5",
+            description="Maximum seconds since the last successful Kortex cyclic feedback refresh.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_filter_coefficient",
+            default_value="0.05",
+            description="Low-pass filter coefficient for Kortex estimated external wrench.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_force_deadband",
+            default_value="2.0",
+            description="Force deadband in newtons for Kortex estimated external wrench.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "wrench_torque_deadband",
+            default_value="0.2",
+            description="Torque deadband in newton-meters for Kortex estimated external wrench.",
         )
     )
     declared_arguments.append(
@@ -115,6 +209,19 @@ def generate_launch_description():
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
     robot_controller = LaunchConfiguration("robot_controller")
+    robot_pos_controller = LaunchConfiguration("robot_pos_controller")
+    wrench_injector = LaunchConfiguration("wrench_injector")
+    tool_wrench_broadcaster = LaunchConfiguration("tool_wrench_broadcaster")
+    initial_positions_file = LaunchConfiguration("initial_positions_file")
+    payload_cog_x = LaunchConfiguration("payload_cog_x")
+    payload_cog_y = LaunchConfiguration("payload_cog_y")
+    payload_cog_z = LaunchConfiguration("payload_cog_z")
+    payload_weight = LaunchConfiguration("payload_weight")
+    include_clarius = LaunchConfiguration("include_clarius")
+    feedback_timeout = LaunchConfiguration("feedback_timeout")
+    wrench_filter_coefficient = LaunchConfiguration("wrench_filter_coefficient")
+    wrench_force_deadband = LaunchConfiguration("wrench_force_deadband")
+    wrench_torque_deadband = LaunchConfiguration("wrench_torque_deadband")
     gripper = LaunchConfiguration("gripper")
     use_internal_bus_gripper_comm = LaunchConfiguration("use_internal_bus_gripper_comm")
     gripper_max_velocity = LaunchConfiguration("gripper_max_velocity")
@@ -132,6 +239,19 @@ def generate_launch_description():
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
             "robot_controller": robot_controller,
+            "robot_pos_controller": robot_pos_controller,
+            "wrench_injector": wrench_injector,
+            "tool_wrench_broadcaster": tool_wrench_broadcaster,
+            "initial_positions_file": initial_positions_file,
+            "payload_cog_x": payload_cog_x,
+            "payload_cog_y": payload_cog_y,
+            "payload_cog_z": payload_cog_z,
+            "payload_weight": payload_weight,
+            "include_clarius": include_clarius,
+            "feedback_timeout": feedback_timeout,
+            "wrench_filter_coefficient": wrench_filter_coefficient,
+            "wrench_force_deadband": wrench_force_deadband,
+            "wrench_torque_deadband": wrench_torque_deadband,
             "gripper": gripper,
             "use_internal_bus_gripper_comm": use_internal_bus_gripper_comm,
             "gripper_max_velocity": gripper_max_velocity,
