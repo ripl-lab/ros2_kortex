@@ -218,7 +218,10 @@ def generate_launch_description():
             DeclareLaunchArgument("payload_cog_x", default_value="0.0"),
             DeclareLaunchArgument("payload_cog_y", default_value="0.0"),
             DeclareLaunchArgument("payload_cog_z", default_value="0.0473"),
-            DeclareLaunchArgument("payload_weight", default_value="0.925"),
+            # This launch contains the bare arm (no gripper/payload), so a
+            # real-robot payload compensation force would be interpreted by
+            # admittance as a constant external wrench.
+            DeclareLaunchArgument("payload_weight", default_value="0.0"),
             OpaqueFunction(function=launch_setup),
         ]
     )
