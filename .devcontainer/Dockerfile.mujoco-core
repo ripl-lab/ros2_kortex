@@ -1,9 +1,8 @@
-FROM ros:humble-ros-base-jammy
+FROM ros:humble-ros-core-jammy
 
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
-ARG RUN_CLARIUS_SETUP=true
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ROS_DISTRO=humble
@@ -13,19 +12,28 @@ ENV VIRTUAL_ENV=/workspace/ros2_kortex_ws/.venv
 ENV PATH=/workspace/ros2_kortex_ws/.venv/bin:${PATH}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config \
     bash-completion \
     build-essential \
     cmake \
+    extra-cmake-modules \
     git \
     iputils-ping \
+    less \
     libcap-dev \
     libglfw3-dev \
     libopencv-dev \
     libpcl-dev \
+    libexpected-dev \
+    libtinyxml2-dev \
+    libwayland-bin \
+    libwayland-dev \
     libx11-dev \
-    less \
-    openssh-client \
+    libxcursor-dev \
+    libxi-dev \
+    libxinerama-dev \
+    libxkbcommon-dev \
+    libxrandr-dev \
+    pkg-config \
     python3-argcomplete \
     python3-colcon-common-extensions \
     python3-pip \
@@ -34,27 +42,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-vcstool \
     python3-venv \
     ros-humble-ackermann-msgs \
+    ros-humble-angles \
+    ros-humble-backward-ros \
     ros-humble-control-toolbox \
     ros-humble-cv-bridge \
     ros-humble-example-interfaces \
     ros-humble-generate-parameter-library \
-    ros-humble-moveit \
+    ros-humble-kinematics-interface \
+    ros-humble-kinematics-interface-kdl \
     ros-humble-pcl-conversions \
-    ros-humble-pcl-ros \
     ros-humble-perception-pcl \
     ros-humble-rmw-cyclonedds-cpp \
-    ros-humble-ros2bag \
-    ros-humble-rviz2 \
+    ros-humble-robot-state-publisher \
+    ros-humble-rsl \
+    ros-humble-tf2-eigen \
+    ros-humble-tf2-geometry-msgs \
+    ros-humble-tf2-kdl \
+    ros-humble-tf2-ros \
     ros-humble-urdfdom-py \
     ros-humble-xacro \
     sudo \
     vim \
-    libwayland-bin \
     wayland-protocols \
     xorg-dev \
-    libwayland-dev \
-    libxkbcommon-dev \
-    extra-cmake-modules \
     && rm -rf /var/lib/apt/lists/*
 
 RUN if ! getent group ${USER_GID} >/dev/null; then groupadd --gid ${USER_GID} ${USERNAME}; fi \
@@ -63,22 +73,6 @@ RUN if ! getent group ${USER_GID} >/dev/null; then groupadd --gid ${USER_GID} ${
     && chmod 0440 /etc/sudoers.d/${USERNAME}
 
 RUN rosdep init || true
-
-WORKDIR ${COLCON_WS}
-COPY . ${COLCON_WS}/src/ros2_kortex
-
-RUN python3 -m venv --system-site-packages ${COLCON_WS}/.venv \
-    && ${COLCON_WS}/.venv/bin/python -m pip install --upgrade pip 'setuptools<80' wheel \
-    && (rosdep update --rosdistro ${ROS_DISTRO} || true) \
-    && if [ "${RUN_CLARIUS_SETUP}" = "true" ]; then \
-    . /opt/ros/${ROS_DISTRO}/setup.sh \
-    && vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.${ROS_DISTRO}.repos \
-    && vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.${ROS_DISTRO}.repos \
-    && apt-get update \
-    && rosdep install --ignore-src --from-paths src -y -r \
-    && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential \
-    && rm -rf /var/lib/apt/lists/*; \
-    fi
 
 RUN printf '%s\n' \
     'source /opt/ros/humble/setup.bash' \
@@ -91,7 +85,7 @@ RUN printf '%s\n' \
     'if [ -f /workspace/ros2_kortex_ws/install/setup.bash ]; then source /workspace/ros2_kortex_ws/install/setup.bash; fi' \
     'if [ -f /workspace/ros2_kortex_ws/.venv/bin/activate ]; then source /workspace/ros2_kortex_ws/.venv/bin/activate; fi' \
     >> /home/${USERNAME}/.bashrc \
-    && chown -R ${USERNAME}:${USER_GID} /home/${USERNAME} ${COLCON_WS}
+    && chown -R ${USERNAME}:${USER_GID} /home/${USERNAME}
 
 USER ${USERNAME}
 WORKDIR ${COLCON_WS}
