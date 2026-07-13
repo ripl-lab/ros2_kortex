@@ -107,6 +107,13 @@
         <default>
           <joint damping="2.0"/>
         </default>
+        <reference name="${prefix}end_effector_link">
+          <geom type="sphere" size="0.04" contype="2" conaffinity="2"
+                rgba="0.2 0.7 0.2 0.6"/>
+        </reference>
+        <contact>
+          <exclude body1="${prefix}base_link" body2="${prefix}shoulder_link"/>
+        </contact>
         <actuator>
           <position name="position_joint_1" joint="${prefix}joint_1" kp="2000" forcelimited="true" forcerange="-120 120"/>
           <position name="position_joint_2" joint="${prefix}joint_2" kp="2000" forcelimited="true" forcerange="-120 120"/>
