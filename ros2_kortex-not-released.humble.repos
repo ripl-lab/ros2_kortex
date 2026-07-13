@@ -13,5 +13,5 @@ repositories:
     version: ros2
   mujoco_ros2_control:
     type: git
-    url: https://github.com/dfki-ric/mujoco_ros2_control.git
-    version: main
+    url: https://github.com/ripl-lab/mujoco_ros2_control.git
+    version: feat/admittance_control

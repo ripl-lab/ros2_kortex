@@ -9,8 +9,8 @@ repositories:
     version: humble
   ros2_controllers:
     type: git
-    url: https://github.com/ros-controls/ros2_controllers.git
-    version: humble
+    url: https://github.com/ripl-lab/ros2_controllers.git
+    version: feat/admittance_control
   ros2_robotiq_gripper:
     type: git
     url: https://github.com/aalmrad/ros2_robotiq_gripper.git
