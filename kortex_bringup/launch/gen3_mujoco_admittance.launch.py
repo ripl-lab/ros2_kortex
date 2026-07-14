@@ -254,9 +254,6 @@ def launch_setup(context, *args, **kwargs):
     gen3_common_mesh_path = PathJoinSubstitution(
         [FindPackageShare("kortex_description"), "arms/gen3/meshes"]
     ).perform(context)
-    clarius_mesh_path = PathJoinSubstitution(
-        [FindPackageShare("clarius_description"), "meshes"]
-    ).perform(context)
     mesh_fixup = ExecuteProcess(
         cmd=[
             "bash",
@@ -264,7 +261,7 @@ def launch_setup(context, *args, **kwargs):
             (
                 f"sed -i 's/\\.dae/\\.STL/g' '{mujoco_model_path}'/*.xml; "
                 "for d in "
-                f"'{gen3_mesh_path}' '{gen3_common_mesh_path}' '{clarius_mesh_path}'; do "
+                f"'{gen3_mesh_path}' '{gen3_common_mesh_path}'; do "
                 f"find -L \"$d\" -maxdepth 1 -type f -exec ln -sf {{}} '{mujoco_mesh_path}'/ \\;; "
                 "done"
             ),
