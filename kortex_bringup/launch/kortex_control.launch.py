@@ -37,7 +37,9 @@ import os
 import tempfile
 
 
-def load_and_apply_prefix(yaml_path, prefix, robot_description, substitutions=None):
+def load_and_apply_prefix(
+    yaml_path, prefix, robot_description, substitutions=None, force_test_response=False
+):
     with open(yaml_path) as f:
         text = f.read()
     # Replace ${prefix} placeholders in the text
@@ -51,7 +53,16 @@ def load_and_apply_prefix(yaml_path, prefix, robot_description, substitutions=No
     ]
     for admittance_node in admittance_nodes:
         if admittance_node in data:
-            data[admittance_node]["ros__parameters"]["robot_description"] = robot_description
+            parameters = data[admittance_node]["ros__parameters"]
+            parameters["robot_description"] = robot_description
+            parameters["admittance"]["selected_axes"] = [
+                force_test_response,
+                force_test_response,
+                force_test_response,
+                False,
+                False,
+                False,
+            ]
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="kortex_controllers_", suffix=".yaml", delete=False
     ) as out:
@@ -96,6 +107,7 @@ def launch_setup(context, *args, **kwargs):
     payload_cog_y = LaunchConfiguration("payload_cog_y")
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
+    force_test_response = LaunchConfiguration("force_test_response")
 
     # if we are using fake hardware then we can't use the internal gripper communications of the hardware
     use_fake_hardware_value = use_fake_hardware.perform(context)
@@ -202,6 +214,7 @@ def launch_setup(context, *args, **kwargs):
                     "payload_weight": payload_weight.perform(context),
                     "gripper_joint_name": gripper_joint_name.perform(context),
                 },
+                force_test_response=force_test_response.perform(context).lower() == "true",
             )
         ],
         namespace=prefix_str,
@@ -441,6 +454,13 @@ def generate_launch_description():
             "robot_pos_controller",
             default_value="twist_controller",
             description="Robot controller to start.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "force_test_response",
+            default_value="true",
+            description="Enable admittance motion from the estimated external wrench.",
         )
     )
     declared_arguments.append(

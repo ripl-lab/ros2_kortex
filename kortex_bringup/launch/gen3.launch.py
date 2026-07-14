@@ -122,6 +122,13 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "force_test_response",
+            default_value="true",
+            description="Enable admittance motion from the estimated external wrench.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "include_clarius",
             default_value="true",
             description="Attach the Clarius probe model to the Gen3 wrist mount.",
@@ -217,6 +224,7 @@ def generate_launch_description():
     payload_cog_y = LaunchConfiguration("payload_cog_y")
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
+    force_test_response = LaunchConfiguration("force_test_response")
     include_clarius = LaunchConfiguration("include_clarius")
     feedback_timeout = LaunchConfiguration("feedback_timeout")
     wrench_filter_coefficient = LaunchConfiguration("wrench_filter_coefficient")
@@ -247,6 +255,7 @@ def generate_launch_description():
             "payload_cog_y": payload_cog_y,
             "payload_cog_z": payload_cog_z,
             "payload_weight": payload_weight,
+            "force_test_response": force_test_response,
             "include_clarius": include_clarius,
             "feedback_timeout": feedback_timeout,
             "wrench_filter_coefficient": wrench_filter_coefficient,

@@ -82,7 +82,10 @@ From the `ros2_kortex` repository directory, run:
 
 ```bash
 ./.devcontainer/dev-docker.sh -- \
-  colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential
+  colcon build --cmake-args \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
+    --executor sequential
 ```
 
 On the first run, this command:
@@ -111,7 +114,11 @@ workspace virtual environment. It uses host networking and mounts the workspace 
 For subsequent source changes, rebuild from inside the container:
 
 ```bash
-colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential
+colcon build \
+  --cmake-args \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
+  --executor sequential
 source install/setup.bash
 ```
 
@@ -173,6 +180,7 @@ source /opt/ros/humble/setup.bash
 if [ -f install/setup.bash ]; then source install/setup.bash; fi
 colcon build \
   --packages-up-to admittance_controller mujoco_ros2_control kortex_bringup \
+  --cmake-args -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
   --executor sequential
 source install/setup.bash
 ```
@@ -244,6 +252,33 @@ ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
   launch_gui:=false \
   force_test_fixture:=false
 ```
+
+### Measure force from real Gen3 joint torques
+
+The real Gen3 hardware exports cyclic actuator torque readings through each joint's ROS 2
+`effort` state interface. Start the joint-effort wrench estimator in measure-only mode with:
+
+```bash
+ros2 launch kortex_bringup gen3_admittance.launch.py \
+  robot_ip:=192.168.1.10 \
+  use_fake_hardware:=false \
+  force_test_response:=false
+```
+
+The admittance controller starts at the measured joint positions and keeps every response axis
+disabled, so the estimate is published without force-driven motion. Inspect it with:
+
+```bash
+ros2 topic echo /admittance_controller/status
+```
+
+The estimated force is in `wrench_base.wrench.force`. Keep the arm unloaded initially and verify
+that the estimate is near zero before applying a known force. Accuracy depends on the URDF inertial
+model and the configured payload mass and center of gravity; pass the `payload_weight` and
+`payload_cog_*` launch arguments if the attached tool differs from the defaults.
+
+Only after validating the estimate should compliant translation be enabled with
+`force_test_response:=true`.
 
 ---
 

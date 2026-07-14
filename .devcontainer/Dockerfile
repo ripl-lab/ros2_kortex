@@ -76,7 +76,10 @@ RUN python3 -m venv --system-site-packages ${COLCON_WS}/.venv \
     && vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.${ROS_DISTRO}.repos \
     && apt-get update \
     && rosdep install --ignore-src --from-paths src -y -r \
-    && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential \
+    && colcon build --cmake-args \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
+      --executor sequential \
     && rm -rf /var/lib/apt/lists/*; \
     fi
 

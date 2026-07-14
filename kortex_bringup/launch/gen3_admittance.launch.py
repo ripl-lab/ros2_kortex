@@ -20,6 +20,7 @@ def generate_launch_description():
     payload_cog_y = LaunchConfiguration("payload_cog_y")
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
+    force_test_response = LaunchConfiguration("force_test_response")
     include_clarius = LaunchConfiguration("include_clarius")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
     feedback_timeout = LaunchConfiguration("feedback_timeout")
@@ -47,22 +48,10 @@ def generate_launch_description():
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
             "controllers_file": "ros2_controllers_admittance.yaml",
-            "robot_controller": PythonExpression(
-                [
-                    "'admittance_controller' if '",
-                    use_fake_hardware,
-                    "' == 'true' else 'joint_trajectory_controller'",
-                ]
-            ),
-            "robot_pos_controller": PythonExpression(
-                [
-                    "'joint_trajectory_controller' if '",
-                    use_fake_hardware,
-                    "' == 'true' else 'admittance_controller'",
-                ]
-            ),
+            "robot_controller": "admittance_controller",
+            "robot_pos_controller": "joint_trajectory_controller",
             "wrench_injector": "wrench_injector",
-            "tool_wrench_broadcaster": "tool_wrench_broadcaster",
+            "tool_wrench_broadcaster": "",
             "gripper": gripper,
             "gripper_joint_name": gripper_joint_name,
             "use_internal_bus_gripper_comm": use_internal_bus_gripper_comm,
@@ -70,6 +59,7 @@ def generate_launch_description():
             "payload_cog_y": payload_cog_y,
             "payload_cog_z": payload_cog_z,
             "payload_weight": controller_payload_weight,
+            "force_test_response": force_test_response,
             "include_clarius": include_clarius,
             "feedback_timeout": feedback_timeout,
             "wrench_filter_coefficient": wrench_filter_coefficient,
@@ -162,6 +152,14 @@ def generate_launch_description():
                 "wrench_torque_deadband",
                 default_value="0.2",
                 description="Torque deadband in newton-meters for Kortex estimated external wrench.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_response",
+                default_value="false",
+                description=(
+                    "Enable motion from estimated force. False keeps all admittance axes "
+                    "disabled while joint-torque wrench estimation remains active."
+                ),
             ),
             DeclareLaunchArgument(
                 "initial_positions_file",

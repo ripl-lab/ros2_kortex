@@ -55,8 +55,13 @@ ${prefix}/admittance_controller:
       - ${prefix}joint_6
       - ${prefix}joint_7
     command_interfaces: [position]
-    state_interfaces: [position, velocity]
+    state_interfaces: [position, velocity, effort]
     chainable_command_interfaces: [position, velocity]
+    estimate_external_wrench_from_joint_efforts: true
+    joint_effort_wrench_estimator:
+      damping: 0.05
+      effort_mode: measured
+      acceleration_filter_coefficient: 0.1
 
     kinematics:
       plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
@@ -67,7 +72,7 @@ ${prefix}/admittance_controller:
       alpha: 0.0005
 
     ft_sensor:
-      name: ${prefix}tool_external_wrench
+      name: ${prefix}estimated_tool_wrench
       frame:
         id: ${prefix}end_effector_link 
         external: false 
@@ -91,7 +96,13 @@ ${prefix}/admittance_controller:
         force: ${payload_weight}
 
     admittance:
-      selected_axes: [true, true, true, false, false, false]
+      selected_axes:
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
       mass: [8.0, 8.0, 8.0, 10.0, 10.0, 10.0]
       damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
       stiffness: [40.0, 40.0, 40.0, 0.0, 0.0, 0.0]
