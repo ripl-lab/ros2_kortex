@@ -38,11 +38,12 @@ ${prefix}/admittance_controller:
       - ${prefix}joint_6
       - ${prefix}joint_7
     command_interfaces: [position]
-    state_interfaces: [position, velocity, effort]
+    state_interfaces: [position, velocity, acceleration, effort]
     chainable_command_interfaces: [position, velocity]
     estimate_external_wrench_from_joint_efforts: true
     joint_effort_wrench_estimator:
       damping: 0.05
+      effort_mode: measured
 
     kinematics:
       plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
@@ -57,7 +58,7 @@ ${prefix}/admittance_controller:
       frame:
         id: ${prefix}end_effector_link
         external: false
-        filter_coefficient: 1.0
+      filter_coefficient: 1.0
     control:
       frame:
         id: ${prefix}end_effector_link

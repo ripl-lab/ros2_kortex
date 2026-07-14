@@ -44,7 +44,7 @@ def load_and_apply_prefix(
             selected_axes = [False] * 6
             selected_axes[{"x": 0, "y": 1, "z": 2}[force_test_axis]] = force_test_response
             params["admittance"]["selected_axes"] = selected_axes
-            params["admittance"]["stiffness"] = [100.0, 40.0, 40.0, 0.0, 0.0, 0.0]
+            params["admittance"]["stiffness"] = [100.0, 100.0, 100.0, 0.0, 0.0, 0.0]
             params["admittance"]["joint_damping"] = 10.0
             params["joint_effort_wrench_estimator"]["damping"] = 0.001
             params["control"]["frame"]["id"] = f"{prefix}base_link"
@@ -379,7 +379,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "force_test_force",
-                default_value="6.0",
+                default_value="10.0",
                 description="Signed physical contact force in newtons.",
             ),
             DeclareLaunchArgument("payload_cog_x", default_value="0.0"),

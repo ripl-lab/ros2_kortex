@@ -30,7 +30,6 @@
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>admittance_controller</exec_depend>
   <exec_depend>forward_command_controller</exec_depend>
-  <exec_depend>kinematics_interface_kdl</exec_depend>
   <exec_depend>mujoco_ros2_control</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>

@@ -71,7 +71,7 @@ ${prefix}/admittance_controller:
       frame:
         id: ${prefix}end_effector_link 
         external: false 
-        filter_coefficient: 1.0
+      filter_coefficient: 1.0
     control:
       frame:
         id: ${prefix}end_effector_link

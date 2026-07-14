@@ -48,16 +48,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-cv-bridge \
     ros-humble-example-interfaces \
     ros-humble-generate-parameter-library \
-    ros-humble-kinematics-interface \
-    ros-humble-kinematics-interface-kdl \
     ros-humble-pcl-conversions \
     ros-humble-perception-pcl \
+    ros-humble-pinocchio \
     ros-humble-rmw-cyclonedds-cpp \
     ros-humble-robot-state-publisher \
     ros-humble-rsl \
     ros-humble-tf2-eigen \
     ros-humble-tf2-geometry-msgs \
-    ros-humble-tf2-kdl \
     ros-humble-tf2-ros \
     ros-humble-urdfdom-py \
     ros-humble-xacro \
