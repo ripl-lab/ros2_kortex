@@ -196,6 +196,8 @@ ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
   force_test_fixture:=true \
   force_test_axis:=x \
   force_test_force:=10.0 \
+  force_test_duration:=2.0 \
+  force_test_start_delay:=1.0 \
   force_test_response:=true
 ```
 
@@ -207,6 +209,17 @@ The force controls are:
 
 - `force_test_axis:=x`, `y`, or `z` selects the base/world force axis.
 - `force_test_force:=10.0` applies a positive 10 N force; use `-10.0` for the opposite direction.
+- `force_test_duration:=2.0` releases the physical load after two seconds of simulation time.
+- `force_test_start_delay:=1.0` lets controllers initialize before the timed load begins.
+- `force_test_mass:=8.0` sets the virtual translational mass in kilograms.
+- `force_test_damping_ratio:=2.0` sets the virtual Cartesian damping ratio.
+- `force_test_stiffness:=100.0` sets translational stiffness in N/m.
+- `force_test_joint_damping:=10.0` sets admittance inverse-kinematics joint damping.
+
+The controller also bounds the virtual motion with measured-state tracking anti-windup. Its
+`admittance.max_cartesian_acceleration`, `max_joint_acceleration`, `max_joint_velocity`,
+`max_joint_displacement`, and `max_tracking_error` parameters can be tuned in the controller YAML.
+The MuJoCo Gen3 position servos use lower-bandwidth PD gains to avoid high-frequency wrist chatter.
 - `force_test_response:=true` enables compliant motion on the selected axis.
 - `force_test_response:=false` keeps the robot holding position while the estimator continues to
   measure the applied force.
@@ -235,6 +248,22 @@ ros2 topic echo /admittance_controller/status
 The estimated base-frame force is reported in `wrench_base.wrench.force`. Allow the simulation to
 settle before checking it. With the default force fixture, the selected component should be close
 to the requested signed force; the acceptance tolerance used for force testing is 0.5 N.
+
+To verify that the robot settles after the timed force is removed, keep the launch running and run
+this in another sourced container terminal. Match `--duration` to `force_test_duration`:
+
+```bash
+ros2 run kortex_bringup verify_mujoco_force_stop.py \
+  --duration 2.0 \
+  --start-delay 1.0 \
+  --settle-time 5.0 \
+  --observation-time 1.0
+```
+
+The check passes when every joint remains below 0.01 rad/s and drifts less than 0.002 rad over the
+post-settle observation window. Both tolerances can be overridden with command-line options. Run
+the same check with both `force_test_response:=false` (estimator-only hold) and
+`force_test_response:=true` (compliant response) when validating controller stability.
 
 When `force_test_response:=true`, the fixture sets the translational stiffness to 100 N/m. A steady
 10 N force should therefore produce approximately 0.10 m of tool displacement on the selected

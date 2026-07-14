@@ -26,6 +26,10 @@ def load_and_apply_prefix(
     force_test_fixture=False,
     force_test_response=True,
     force_test_axis="x",
+    force_test_mass=8.0,
+    force_test_damping_ratio=2.0,
+    force_test_stiffness=100.0,
+    force_test_joint_damping=10.0,
 ):
     with open(yaml_path) as f:
         text = f.read()
@@ -44,9 +48,12 @@ def load_and_apply_prefix(
             selected_axes = [False] * 6
             selected_axes[{"x": 0, "y": 1, "z": 2}[force_test_axis]] = force_test_response
             params["admittance"]["selected_axes"] = selected_axes
-            params["admittance"]["stiffness"] = [100.0, 100.0, 100.0, 0.0, 0.0, 0.0]
-            params["admittance"]["joint_damping"] = 10.0
-            params["joint_effort_wrench_estimator"]["damping"] = 0.001
+            params["admittance"]["mass"] = [force_test_mass] * 3 + [10.0] * 3
+            params["admittance"]["damping_ratio"] = [force_test_damping_ratio] * 6
+            params["admittance"]["stiffness"] = [force_test_stiffness] * 3 + [0.0] * 3
+            params["admittance"]["joint_damping"] = force_test_joint_damping
+            params["joint_effort_wrench_estimator"]["damping"] = 0.05
+            params["ft_sensor"]["filter_coefficient"] = 0.05
             params["control"]["frame"]["id"] = f"{prefix}base_link"
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="kortex_mujoco_controllers_", suffix=".yaml", delete=False
@@ -55,7 +62,7 @@ def load_and_apply_prefix(
         return out.name
 
 
-def create_force_test_fixture(axis_name, signed_force):
+def create_force_test_fixture(axis_name, signed_force, duration, start_delay):
     axis_vectors = {
         "x": (1.0, 0.0, 0.0),
         "y": (0.0, 1.0, 0.0),
@@ -65,6 +72,10 @@ def create_force_test_fixture(axis_name, signed_force):
         raise RuntimeError("force_test_axis must be one of: x, y, z")
     if not math.isfinite(signed_force) or signed_force == 0.0:
         raise RuntimeError("force_test_force must be a finite, non-zero value in newtons")
+    if not math.isfinite(duration) or duration <= 0.0:
+        raise RuntimeError("force_test_duration must be a finite, positive value in seconds")
+    if not math.isfinite(start_delay) or start_delay < 0.0:
+        raise RuntimeError("force_test_start_delay must be finite and non-negative")
 
     sign = 1.0 if signed_force > 0.0 else -1.0
     direction = tuple(sign * value for value in axis_vectors[axis_name])
@@ -130,6 +141,21 @@ def create_force_test_fixture(axis_name, signed_force):
             "gear": "1",
         },
     )
+    custom = ET.SubElement(root, "custom")
+    ET.SubElement(
+        custom,
+        "numeric",
+        {
+            "name": "ros2_control_force_duration",
+            "data": f"{duration:.10g}",
+        },
+    )
+    ET.SubElement(custom, "numeric", {
+        "name": "ros2_control_force_start_delay", "data": f"{start_delay:.10g}"
+    })
+    ET.SubElement(custom, "numeric", {
+        "name": "ros2_control_force_value", "data": f"{actuator_force:.10g}"
+    })
     keyframe = ET.SubElement(root, "keyframe")
     ET.SubElement(
         keyframe,
@@ -137,7 +163,7 @@ def create_force_test_fixture(axis_name, signed_force):
         {
             "name": "force_test_initial",
             "qpos": "0 -0.35 0 1.25 0 0.85 0 0",
-            "ctrl": f"0 -0.35 0 1.25 0 0.85 0 {actuator_force:.10g}",
+            "ctrl": "0 -0.35 0 1.25 0 0.85 0 0",
         },
     )
     ET.indent(root, space="  ")
@@ -159,6 +185,12 @@ def launch_setup(context, *args, **kwargs):
     force_test_response = LaunchConfiguration("force_test_response")
     force_test_axis = LaunchConfiguration("force_test_axis")
     force_test_force = LaunchConfiguration("force_test_force")
+    force_test_duration = LaunchConfiguration("force_test_duration")
+    force_test_start_delay = LaunchConfiguration("force_test_start_delay")
+    force_test_mass = LaunchConfiguration("force_test_mass")
+    force_test_damping_ratio = LaunchConfiguration("force_test_damping_ratio")
+    force_test_stiffness = LaunchConfiguration("force_test_stiffness")
+    force_test_joint_damping = LaunchConfiguration("force_test_joint_damping")
     payload_cog_x = LaunchConfiguration("payload_cog_x")
     payload_cog_y = LaunchConfiguration("payload_cog_y")
     payload_cog_z = LaunchConfiguration("payload_cog_z")
@@ -172,6 +204,8 @@ def launch_setup(context, *args, **kwargs):
     force_test_enabled = force_test_fixture.perform(context).lower() == "true"
     force_axis_str = force_test_axis.perform(context).lower()
     force_value = float(force_test_force.perform(context))
+    force_duration = float(force_test_duration.perform(context))
+    force_start_delay = float(force_test_start_delay.perform(context))
     initial_positions_path = initial_positions_file.perform(context)
     if force_test_enabled:
         initial_positions_path = PathJoinSubstitution(
@@ -226,6 +260,10 @@ def launch_setup(context, *args, **kwargs):
         force_test_fixture=force_test_enabled,
         force_test_response=force_test_response.perform(context).lower() == "true",
         force_test_axis=force_axis_str,
+        force_test_mass=float(force_test_mass.perform(context)),
+        force_test_damping_ratio=float(force_test_damping_ratio.perform(context)),
+        force_test_stiffness=float(force_test_stiffness.perform(context)),
+        force_test_joint_damping=float(force_test_joint_damping.perform(context)),
     )
 
     input_files = [
@@ -234,7 +272,8 @@ def launch_setup(context, *args, **kwargs):
         ).perform(context)
     ]
     if force_test_enabled:
-        input_files.append(create_force_test_fixture(force_axis_str, force_value))
+        input_files.append(create_force_test_fixture(
+            force_axis_str, force_value, force_duration, force_start_delay))
 
     xacro2mjcf = Node(
         package="mujoco_ros2_control",
@@ -378,6 +417,36 @@ def generate_launch_description():
                 "force_test_force",
                 default_value="10.0",
                 description="Signed physical contact force in newtons.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_duration",
+                default_value="2.0",
+                description="Simulation-time duration of the physical contact force in seconds.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_start_delay",
+                default_value="1.0",
+                description="Zero-force initialization time before applying the fixture load.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_mass",
+                default_value="8.0",
+                description="Virtual translational mass in kilograms.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_damping_ratio",
+                default_value="2.0",
+                description="Virtual Cartesian damping ratio.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_stiffness",
+                default_value="100.0",
+                description="Virtual translational stiffness in newtons per metre.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_joint_damping",
+                default_value="10.0",
+                description="Joint damping used by the admittance inverse kinematics.",
             ),
             DeclareLaunchArgument("payload_cog_x", default_value="0.0"),
             DeclareLaunchArgument("payload_cog_y", default_value="0.0"),

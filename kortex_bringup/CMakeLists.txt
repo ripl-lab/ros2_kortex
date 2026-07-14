@@ -9,6 +9,7 @@ install(PROGRAMS
   scripts/test_huge_joint_space_jump.py
   scripts/inject_wrench.py
   scripts/wrench_stamped_publisher.py
+  scripts/verify_mujoco_force_stop.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

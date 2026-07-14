@@ -115,13 +115,13 @@
           <exclude body1="${prefix}base_link" body2="${prefix}shoulder_link"/>
         </contact>
         <actuator>
-          <position name="position_joint_1" joint="${prefix}joint_1" kp="2000" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_2" joint="${prefix}joint_2" kp="2000" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_3" joint="${prefix}joint_3" kp="2000" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_4" joint="${prefix}joint_4" kp="2000" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_5" joint="${prefix}joint_5" kp="250" forcelimited="true" forcerange="-9 9"/>
-          <position name="position_joint_6" joint="${prefix}joint_6" kp="250" forcelimited="true" forcerange="-9 9"/>
-          <position name="position_joint_7" joint="${prefix}joint_7" kp="250" forcelimited="true" forcerange="-9 9"/>
+          <position name="position_joint_1" joint="${prefix}joint_1" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
+          <position name="position_joint_2" joint="${prefix}joint_2" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
+          <position name="position_joint_3" joint="${prefix}joint_3" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
+          <position name="position_joint_4" joint="${prefix}joint_4" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
+          <position name="position_joint_5" joint="${prefix}joint_5" kp="10" kv="2" forcelimited="true" forcerange="-9 9"/>
+          <position name="position_joint_6" joint="${prefix}joint_6" kp="10" kv="2" forcelimited="true" forcerange="-9 9"/>
+          <position name="position_joint_7" joint="${prefix}joint_7" kp="10" kv="2" forcelimited="true" forcerange="-9 9"/>
         </actuator>
       </mujoco>
     </xacro:if>
