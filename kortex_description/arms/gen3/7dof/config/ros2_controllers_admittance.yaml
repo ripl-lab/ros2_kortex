@@ -61,6 +61,7 @@ ${prefix}/admittance_controller:
     joint_effort_wrench_estimator:
       damping: 0.05
       effort_mode: measured
+      measured_effort_sign: -1.0
       acceleration_filter_coefficient: 0.1
 
     kinematics:

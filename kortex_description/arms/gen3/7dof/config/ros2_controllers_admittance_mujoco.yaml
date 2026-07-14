@@ -49,19 +49,19 @@ ${prefix}/admittance_controller:
       plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
       plugin_package: kinematics_interface
       base: ${prefix}base_link
-      tip: ${prefix}end_effector_link
+      tip: ${prefix}tool_frame
       group_name: arm
       alpha: 0.0005
 
     ft_sensor:
       name: ${prefix}estimated_tool_wrench
       frame:
-        id: ${prefix}end_effector_link
+        id: ${prefix}tool_frame
         external: false
       filter_coefficient: 1.0
     control:
       frame:
-        id: ${prefix}end_effector_link
+        id: ${prefix}tool_frame
         external: false
 
     fixed_world_frame:
@@ -71,7 +71,7 @@ ${prefix}/admittance_controller:
 
     gravity_compensation:
       frame:
-        id: ${prefix}end_effector_link
+        id: ${prefix}tool_frame
         external: false
       CoG:
         pos: [${payload_cog_x}, ${payload_cog_y}, ${payload_cog_z}]

@@ -227,7 +227,7 @@ def launch_setup(context, *args, **kwargs):
             "name:=",
             robot_name,
             " ",
-            "arm:=gen3 dof:=7 vision:=false gripper:='' ",
+            "arm:=gen3 dof:=7 vision:=false gripper:=robotiq_2f_85 ",
             "prefix:=",
             prefix,
             " ",
@@ -293,6 +293,9 @@ def launch_setup(context, *args, **kwargs):
     gen3_common_mesh_path = PathJoinSubstitution(
         [FindPackageShare("kortex_description"), "arms/gen3/meshes"]
     ).perform(context)
+    robotiq_mesh_path = PathJoinSubstitution(
+        [FindPackageShare("robotiq_description"), "meshes/collision/2f_85"]
+    ).perform(context)
     mesh_fixup = ExecuteProcess(
         cmd=[
             "bash",
@@ -302,6 +305,9 @@ def launch_setup(context, *args, **kwargs):
                 "for d in "
                 f"'{gen3_mesh_path}' '{gen3_common_mesh_path}'; do "
                 f"find -L \"$d\" -maxdepth 1 -type f -exec ln -sf {{}} '{mujoco_mesh_path}'/ \\;; "
+                "done; "
+                f"for f in '{robotiq_mesh_path}'/*.stl; do "
+                f"ln -sf \"$f\" '{mujoco_mesh_path}'/\"$(basename \"${{f%.stl}}\").STL\"; "
                 "done"
             ),
         ],
