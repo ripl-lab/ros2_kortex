@@ -70,6 +70,183 @@ ROS2 KINOVA KORTEX™ is the official ROS2 package to interact with KINOVA KORTE
 
 ---
 
+## Docker development environment
+
+The Docker setup targets ROS 2 Humble on Ubuntu 22.04. Install Docker Engine and make sure your
+user can run `docker` before continuing. The repository must be located at
+`<workspace>/src/ros2_kortex`; the helper script mounts the complete workspace into the container.
+
+### Build the workspace in Docker
+
+From the `ros2_kortex` repository directory, run:
+
+```bash
+./.devcontainer/dev-docker.sh -- \
+  colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential
+```
+
+On the first run, this command:
+
+1. Builds the `ros2-kortex-dev` image from `.devcontainer/Dockerfile`.
+2. Imports missing Humble dependencies into the mounted workspace with `vcs`.
+3. Creates the workspace Python virtual environment.
+4. Builds the mounted workspace, so `build`, `install`, and `log` remain on the host.
+
+The initial image build and dependency import can take several minutes. The sequential colcon
+executor avoids excessive memory use.
+
+### Run an interactive container
+
+After the image and workspace have been built, start a shell without rebuilding the image or
+reimporting dependencies:
+
+```bash
+./.devcontainer/dev-docker.sh --no-build --no-init
+```
+
+The container sources ROS 2 Humble, the workspace `install/setup.bash` when present, and the
+workspace virtual environment. It uses host networking and mounts the workspace at
+`/workspace/ros2_kortex_ws`.
+
+For subsequent source changes, rebuild from inside the container:
+
+```bash
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential
+source install/setup.bash
+```
+
+Exit the shell with `exit`. The container is removed automatically, while files in the mounted
+workspace are preserved.
+
+Useful options include:
+
+```bash
+# Use a custom image and container name.
+./.devcontainer/dev-docker.sh --image my-kortex-image --name my-kortex-container
+
+# Skip the full Clarius dependency setup while building a lighter development image.
+RUN_CLARIUS_SETUP=false ./.devcontainer/dev-docker.sh
+
+# Display every supported option.
+./.devcontainer/dev-docker.sh --help
+```
+
+When `RUN_CLARIUS_SETUP=false` is used, install any missing workspace dependencies inside the
+container before building:
+
+```bash
+sudo apt-get update
+rosdep install --ignore-src --from-paths src -y -r
+```
+
+For graphical applications, the script forwards `DISPLAY` and mounts `/tmp/.X11-unix` when it is
+available. The host X server may also need to authorize the local container user.
+
+### Minimal MuJoCo build image
+
+For controller and headless MuJoCo development without the full development image, build the core
+image from the workspace root:
+
+```bash
+cd /path/to/ros2_kortex_ws
+docker build \
+  -t ros2-kortex-mujoco-core \
+  -f src/ros2_kortex/.devcontainer/Dockerfile.mujoco-core \
+  src/ros2_kortex
+```
+
+Run it with the workspace mounted:
+
+```bash
+docker run --rm -it \
+  --network host \
+  --ipc host \
+  -v "$PWD:/workspace/ros2_kortex_ws" \
+  -w /workspace/ros2_kortex_ws \
+  ros2-kortex-mujoco-core bash
+```
+
+Then build and source the required packages in the container:
+
+```bash
+source /opt/ros/humble/setup.bash
+if [ -f install/setup.bash ]; then source install/setup.bash; fi
+colcon build \
+  --packages-up-to admittance_controller mujoco_ros2_control kortex_bringup \
+  --executor sequential
+source install/setup.bash
+```
+
+### Run MuJoCo with admittance and an applied force
+
+Start the development container and ensure the workspace is built and sourced as described above.
+Then launch the seven-DoF Gen3 with the admittance controller and the MuJoCo force-test fixture:
+
+```bash
+ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
+  launch_gui:=true \
+  force_test_fixture:=true \
+  force_test_axis:=x \
+  force_test_force:=10.0 \
+  force_test_response:=true
+```
+
+The fixture creates a physical sliding plunger in MuJoCo and applies the requested signed contact
+force to the tool. It does not inject a synthetic wrench directly into the controller. The
+controller estimates the wrench from `qfrc_actuator`, `qacc`, and the Pinocchio dynamics model.
+
+The force controls are:
+
+- `force_test_axis:=x`, `y`, or `z` selects the base/world force axis.
+- `force_test_force:=10.0` applies a positive 10 N force; use `-10.0` for the opposite direction.
+- `force_test_response:=true` enables compliant motion on the selected axis.
+- `force_test_response:=false` keeps the robot holding position while the estimator continues to
+  measure the applied force.
+- `launch_gui:=false` runs the same test headlessly.
+
+For example, run an estimator-only test with a negative Y force:
+
+```bash
+ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
+  launch_gui:=false \
+  force_test_fixture:=true \
+  force_test_axis:=y \
+  force_test_force:=-10.0 \
+  force_test_response:=false
+```
+
+In another terminal, enter the running development container and inspect the controller state:
+
+```bash
+docker exec -it ros2-kortex-dev bash
+source /opt/ros/humble/setup.bash
+source /workspace/ros2_kortex_ws/install/setup.bash
+ros2 topic echo /admittance_controller/status
+```
+
+The estimated base-frame force is reported in `wrench_base.wrench.force`. Allow the simulation to
+settle before checking it. With the default force fixture, the selected component should be close
+to the requested signed force; the acceptance tolerance used for force testing is 0.5 N.
+
+When `force_test_response:=true`, the fixture sets the translational stiffness to 100 N/m. A steady
+10 N force should therefore produce approximately 0.10 m of tool displacement on the selected
+axis. Tool motion can be observed in the GUI or from the base-to-tool transform:
+
+```bash
+ros2 run tf2_ros tf2_echo base_link end_effector_link
+```
+
+To establish the zero-force pose or verify that the estimator is near zero without contact, run
+the launch once with the fixture disabled:
+
+```bash
+ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
+  launch_gui:=false \
+  force_test_fixture:=false
+```
+
+---
+
 ## CLARIUS SETUP
 
 **Note:** For MoveIt planing and replay rosbag only for now
