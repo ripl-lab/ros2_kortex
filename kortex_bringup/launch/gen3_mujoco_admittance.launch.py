@@ -13,6 +13,7 @@ from launch.actions import (
     RegisterEventHandler,
 )
 from launch.event_handlers import OnProcessExit, OnProcessStart
+from launch.conditions import IfCondition
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -179,6 +180,7 @@ def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration("robot_name")
     gripper = LaunchConfiguration("gripper")
     launch_gui = LaunchConfiguration("launch_gui")
+    visualize_wrench = LaunchConfiguration("visualize_wrench")
     realtime_factor = LaunchConfiguration("realtime_factor")
     simulation_frequency = LaunchConfiguration("simulation_frequency")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
@@ -324,6 +326,10 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    applied_force = [0.0, 0.0, 0.0]
+    if force_test_enabled:
+        applied_force[{"x": 0, "y": 1, "z": 2}[force_axis_str]] = force_value
+
     mujoco = Node(
         package="mujoco_ros2_control",
         executable="mujoco_ros2_control",
@@ -335,6 +341,12 @@ def launch_setup(context, *args, **kwargs):
             {"realtime_factor": float(realtime_factor.perform(context))},
             {"robot_model_path": mujoco_model_file},
             {"show_gui": launch_gui.perform(context).lower() == "true"},
+            {"visualize_force_arrows": visualize_wrench.perform(context).lower() == "true"},
+            {"force_arrow_body": f"{prefix_str}end_effector_link"},
+            {"force_arrow_scale": 0.05},
+            {"applied_force": applied_force},
+            {"applied_force_start_delay": force_start_delay},
+            {"applied_force_duration": force_duration},
         ],
         remappings=[("/controller_manager/robot_description", "/robot_description")],
     )
@@ -344,6 +356,21 @@ def launch_setup(context, *args, **kwargs):
         executable="robot_state_publisher",
         output="both",
         parameters=[robot_description, {"use_sim_time": True}],
+    )
+    estimated_wrench_publisher = Node(
+        package="kortex_bringup",
+        executable="wrench_stamped_publisher.py",
+        name="estimated_wrench_publisher",
+        output="screen",
+        parameters=[
+            {
+                "use_sim_time": True,
+                "input_topic": "/admittance_controller/status",
+                "wrench_topic": "/estimated_wrench",
+                "frame_id": "base_link",
+            }
+        ],
+        condition=IfCondition(visualize_wrench),
     )
 
     controller_manager_name = (
@@ -393,6 +420,7 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         robot_state_publisher,
+        estimated_wrench_publisher,
         xacro2mjcf,
         start_mujoco,
         start_mujoco_after_mesh_fixup,
@@ -412,6 +440,7 @@ def generate_launch_description():
                 description="Optional gripper; use 'none' for the bare Gen3 arm.",
             ),
             DeclareLaunchArgument("launch_gui", default_value="true"),
+            DeclareLaunchArgument("visualize_wrench", default_value="true"),
             DeclareLaunchArgument("realtime_factor", default_value="1.0"),
             DeclareLaunchArgument("simulation_frequency", default_value="1000.0"),
             DeclareLaunchArgument(
@@ -447,7 +476,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "force_test_start_delay",
-                default_value="1.0",
+                default_value="5.0",
                 description="Zero-force initialization time before applying the fixture load.",
             ),
             DeclareLaunchArgument(
