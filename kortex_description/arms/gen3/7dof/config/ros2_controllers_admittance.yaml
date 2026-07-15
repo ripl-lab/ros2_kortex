@@ -14,6 +14,9 @@ ${prefix}/controller_manager:
     admittance_controller:
       type: admittance_controller/AdmittanceController
 
+    twist_controller:
+      type: picknik_twist_controller/PicknikTwistController
+
     wrench_injector:
       type: forward_command_controller/MultiInterfaceForwardCommandController
 
@@ -108,6 +111,17 @@ ${prefix}/admittance_controller:
       damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
       stiffness: [40.0, 40.0, 40.0, 0.0, 0.0, 0.0]
       joint_damping: 5.0
+
+${prefix}/twist_controller:
+  ros__parameters:
+    joint: ${prefix}tcp
+    interface_names:
+      - twist.linear.x
+      - twist.linear.y
+      - twist.linear.z
+      - twist.angular.x
+      - twist.angular.y
+      - twist.angular.z
 
 ${prefix}/wrench_injector:
   ros__parameters:

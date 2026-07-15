@@ -38,7 +38,12 @@ import tempfile
 
 
 def load_and_apply_prefix(
-    yaml_path, prefix, robot_description, substitutions=None, force_test_response=False
+    yaml_path,
+    prefix,
+    robot_description,
+    substitutions=None,
+    force_test_response=False,
+    measurement_only=False,
 ):
     with open(yaml_path) as f:
         text = f.read()
@@ -55,6 +60,10 @@ def load_and_apply_prefix(
         if admittance_node in data:
             parameters = data[admittance_node]["ros__parameters"]
             parameters["robot_description"] = robot_description
+            if measurement_only:
+                # Leave the arm in Kinova's single-level firmware gravity hold.  The
+                # admittance controller remains active as a state-only wrench estimator.
+                parameters["state_only"] = True
             parameters["admittance"]["selected_axes"] = [
                 force_test_response,
                 force_test_response,
@@ -215,6 +224,10 @@ def launch_setup(context, *args, **kwargs):
                     "gripper_joint_name": gripper_joint_name.perform(context),
                 },
                 force_test_response=force_test_response.perform(context).lower() == "true",
+                measurement_only=(
+                    use_fake_hardware.perform(context).lower() == "false"
+                    and force_test_response.perform(context).lower() == "false"
+                ),
             )
         ],
         namespace=prefix_str,

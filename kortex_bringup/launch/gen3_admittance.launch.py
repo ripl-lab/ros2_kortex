@@ -36,6 +36,29 @@ def generate_launch_description():
             "'",
         ]
     )
+    measurement_only = PythonExpression(
+        [
+            "'",
+            use_fake_hardware,
+            "' == 'false' and '",
+            force_test_response,
+            "' == 'false'",
+        ]
+    )
+    primary_controller = PythonExpression(
+        [
+            "'twist_controller' if ",
+            measurement_only,
+            " else 'admittance_controller'",
+        ]
+    )
+    wrench_injector_controller = PythonExpression(
+        [
+            "'wrench_injector' if '",
+            use_fake_hardware,
+            "' == 'true' else ''",
+        ]
+    )
 
     gen3_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -48,9 +71,9 @@ def generate_launch_description():
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
             "controllers_file": "ros2_controllers_admittance.yaml",
-            "robot_controller": "admittance_controller",
+            "robot_controller": primary_controller,
             "robot_pos_controller": "joint_trajectory_controller",
-            "wrench_injector": "wrench_injector",
+            "wrench_injector": wrench_injector_controller,
             "tool_wrench_broadcaster": "",
             "gripper": gripper,
             "gripper_joint_name": gripper_joint_name,
@@ -77,12 +100,20 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {
-                "input_topic": "/wrench_injector/commands",
-                "wrench_topic": "/applied_wrench",
+                "input_topic": "/admittance_controller/status",
+                "wrench_topic": "/estimated_wrench",
                 "frame_id": "base_link",
             }
         ],
         condition=IfCondition(visualize_wrench),
+    )
+
+    measurement_estimator_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        name="spawner_measurement_admittance_controller",
+        arguments=["admittance_controller", "-c", "/controller_manager"],
+        condition=IfCondition(measurement_only),
     )
 
     return LaunchDescription(
@@ -125,8 +156,11 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "payload_weight",
-                default_value="0.925",
-                description="Payload weight in newtons for admittance gravity compensation.",
+                default_value="0.0",
+                description=(
+                    "Additional unmodeled payload force in newtons for wrench compensation. "
+                    "The selected gripper inertia is already included in the URDF."
+                ),
             ),
             DeclareLaunchArgument(
                 "include_clarius",
@@ -176,6 +210,7 @@ def generate_launch_description():
                 ),
             ),
             gen3_launch,
+            measurement_estimator_spawner,
             wrench_stamped_publisher,
         ]
     )
