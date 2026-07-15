@@ -177,6 +177,7 @@ def create_force_test_fixture(axis_name, signed_force, duration, start_delay):
 def launch_setup(context, *args, **kwargs):
     prefix = LaunchConfiguration("prefix")
     robot_name = LaunchConfiguration("robot_name")
+    gripper = LaunchConfiguration("gripper")
     launch_gui = LaunchConfiguration("launch_gui")
     realtime_factor = LaunchConfiguration("realtime_factor")
     simulation_frequency = LaunchConfiguration("simulation_frequency")
@@ -197,6 +198,8 @@ def launch_setup(context, *args, **kwargs):
     payload_weight = LaunchConfiguration("payload_weight")
 
     prefix_str = prefix.perform(context)
+    gripper_str = gripper.perform(context)
+    gripper_xacro = "" if gripper_str == "none" else gripper_str
     mujoco_model_path = tempfile.mkdtemp(prefix="kortex_mujoco_")
     mujoco_model_file = os.path.join(mujoco_model_path, "main.xml")
     mujoco_mesh_path = os.path.join(mujoco_model_path, "meshes")
@@ -227,7 +230,9 @@ def launch_setup(context, *args, **kwargs):
             "name:=",
             robot_name,
             " ",
-            "arm:=gen3 dof:=7 vision:=false gripper:=robotiq_2f_85 ",
+            "arm:=gen3 dof:=7 vision:=false gripper:=",
+            gripper_xacro,
+            " ",
             "prefix:=",
             prefix,
             " ",
@@ -293,9 +298,16 @@ def launch_setup(context, *args, **kwargs):
     gen3_common_mesh_path = PathJoinSubstitution(
         [FindPackageShare("kortex_description"), "arms/gen3/meshes"]
     ).perform(context)
-    robotiq_mesh_path = PathJoinSubstitution(
-        [FindPackageShare("robotiq_description"), "meshes/collision/2f_85"]
-    ).perform(context)
+    robotiq_mesh_fixup = ""
+    if gripper_str == "robotiq_2f_85":
+        robotiq_mesh_path = PathJoinSubstitution(
+            [FindPackageShare("robotiq_description"), "meshes/collision/2f_85"]
+        ).perform(context)
+        robotiq_mesh_fixup = (
+            f"for f in '{robotiq_mesh_path}'/*.stl; do "
+            f"ln -sf \"$f\" '{mujoco_mesh_path}'/\"$(basename \"${{f%.stl}}\").STL\"; "
+            "done"
+        )
     mesh_fixup = ExecuteProcess(
         cmd=[
             "bash",
@@ -306,9 +318,7 @@ def launch_setup(context, *args, **kwargs):
                 f"'{gen3_mesh_path}' '{gen3_common_mesh_path}'; do "
                 f"find -L \"$d\" -maxdepth 1 -type f -exec ln -sf {{}} '{mujoco_mesh_path}'/ \\;; "
                 "done; "
-                f"for f in '{robotiq_mesh_path}'/*.stl; do "
-                f"ln -sf \"$f\" '{mujoco_mesh_path}'/\"$(basename \"${{f%.stl}}\").STL\"; "
-                "done"
+                f"{robotiq_mesh_fixup}"
             ),
         ],
         output="screen",
@@ -395,6 +405,12 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("robot_name", default_value="gen3"),
             DeclareLaunchArgument("prefix", default_value=""),
+            DeclareLaunchArgument(
+                "gripper",
+                default_value="robotiq_2f_85",
+                choices=["none", "robotiq_2f_85"],
+                description="Optional gripper; use 'none' for the bare Gen3 arm.",
+            ),
             DeclareLaunchArgument("launch_gui", default_value="true"),
             DeclareLaunchArgument("realtime_factor", default_value="1.0"),
             DeclareLaunchArgument("simulation_frequency", default_value="1000.0"),
@@ -457,9 +473,7 @@ def generate_launch_description():
             DeclareLaunchArgument("payload_cog_x", default_value="0.0"),
             DeclareLaunchArgument("payload_cog_y", default_value="0.0"),
             DeclareLaunchArgument("payload_cog_z", default_value="0.0473"),
-            # This launch contains the bare arm (no gripper/payload), so a
-            # real-robot payload compensation force would be interpreted by
-            # admittance as a constant external wrench.
+            # Modeled gripper inertia is already part of the generated URDF.
             DeclareLaunchArgument("payload_weight", default_value="0.0"),
             OpaqueFunction(function=launch_setup),
         ]
