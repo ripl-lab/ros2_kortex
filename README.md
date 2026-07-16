@@ -187,6 +187,45 @@ source install/setup.bash
 
 ### Run MuJoCo with admittance and an applied force
 
+The MuJoCo GUI also draws each measured joint actuator torque at its joint: yellow is positive,
+purple is negative, and arrow length is proportional to torque magnitude. Run the requested home
+and all-zero pose demonstrations with:
+
+```bash
+ros2 run kortex_bringup demo_mujoco_pose.sh home
+ros2 run kortex_bringup demo_mujoco_pose.sh zero
+```
+
+To view the same measured joint torques in RViz2, launch the MuJoCo demo directly with RViz enabled:
+
+```bash
+ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
+  launch_gui:=true launch_rviz:=true initial_pose:=home force_test_fixture:=false
+```
+
+Choose `initial_pose:=home` or `initial_pose:=zero`. The `Measured Joint Torques` group contains
+seven native RViz Wrench displays fed by `geometry_msgs/WrenchStamped` topics.
+
+The home pose is `[0, 15, 180, -130, 0, 55, 90]` degrees. Both commands keep the joint-effort
+wrench estimator and its blue estimated-force arrow enabled.
+
+To apply 10 N successively on world X, Y, and Z, allowing the arm to return and settle before the
+next independently initialized MuJoCo run, use:
+
+```bash
+ros2 run kortex_bringup demo_mujoco_forces.sh sequence 10 2 5
+```
+
+To demonstrate zero spring stiffness, where the arm retains its displacement after the force is
+removed, run (the final argument is the axis):
+
+```bash
+ros2 run kortex_bringup demo_mujoco_forces.sh stay 10 2 5 x
+```
+
+Stop the zero-spring demonstration with Ctrl-C. It deliberately does not apply a following force,
+because stiffness zero removes the automatic return-to-origin condition.
+
 Start the development container and ensure the workspace is built and sourced as described above.
 Then launch the seven-DoF Gen3 with the admittance controller and the MuJoCo force-test fixture:
 

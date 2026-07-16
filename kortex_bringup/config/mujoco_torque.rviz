@@ -1,0 +1,330 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 138
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Measured Joint Torques1
+        - /Measured Joint Torques1/Joint 11
+        - /Measured Joint Torques1/Joint 21
+        - /Measured Joint Torques1/Joint 31
+        - /Measured Joint Torques1/Joint 41
+        - /Measured Joint Torques1/Joint 51
+        - /Measured Joint Torques1/Joint 61
+        - /Measured Joint Torques1/Joint 71
+        - /Estimated End-Effector Force1
+      Splitter Ratio: 0.5
+    Tree Height: 1219
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 0.25
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.19999998807907104
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 12
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bracelet_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        forearm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        half_arm_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        half_arm_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        spherical_wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        spherical_wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tool_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: Gen3
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_common/Group
+      Displays:
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 1
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_1
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 2
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_2
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 3
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_3
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 4
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_4
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 5
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_5
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 6
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_6
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+        - Accept NaN Values: false
+          Alpha: 1
+          Arrow Width: 0.10000000149011612
+          Class: rviz_default_plugins/Wrench
+          Enabled: true
+          Force Arrow Scale: 2
+          Force Color: 204; 51; 51
+          History Length: 1
+          Name: Joint 7
+          Topic:
+            Depth: 10
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /joint_torque_wrenches/joint_7
+          Torque Arrow Scale: 0.05000000074505806
+          Torque Color: 255; 191; 13
+          Value: true
+      Enabled: true
+      Name: Measured Joint Torques
+    - Accept NaN Values: false
+      Alpha: 1
+      Arrow Width: 0.10000000149011612
+      Class: rviz_default_plugins/Wrench
+      Enabled: true
+      Force Arrow Scale: 0.009999999776482582
+      Force Color: 51; 204; 255
+      History Length: 1
+      Name: Estimated End-Effector Force
+      Topic:
+        Depth: 10
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /estimated_wrench
+      Torque Arrow Scale: 0
+      Torque Color: 51; 204; 255
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: base_link
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 5.174699783325195
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0.44999998807907104
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.1699998527765274
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 5.146372318267822
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 2742
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd0000000100000000000002d800000a24fc0200000002fb000000100044006900730070006c0061007900730100000069000005b10000017800fffffffb0000000a005600690065007700730100000626000004670000012300ffffff0000109800000a2400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 4988
+  X: 132
+  Y: 64

@@ -53,7 +53,8 @@
         </xacro:if>
         <xacro:if value="${sim_mujoco}">
           <plugin>mujoco_ros2_control/MujocoSystem</plugin>
-          <param name="effort_source">actuator</param>
+          <param name="effort_source">total_actuation</param>
+          <param name="gravity_compensation">true</param>
         </xacro:if>
         <xacro:if value="${sim_isaac}">
           <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
