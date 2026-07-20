@@ -101,16 +101,16 @@ ${prefix}/admittance_controller:
 
     admittance:
       selected_axes:
+        - true
         - false
         - false
         - false
         - false
         - false
-        - false
-      mass: [8.0, 8.0, 8.0, 10.0, 10.0, 10.0]
+      mass: [12.0, 12.0, 12.0, 10.0, 10.0, 10.0]
       damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-      stiffness: [40.0, 40.0, 40.0, 0.0, 0.0, 0.0]
-      joint_damping: 5.0
+      stiffness: [200.0, 200.0, 200.0, 0.0, 0.0, 0.0]
+      joint_damping: 10.0
 
 ${prefix}/twist_controller:
   ros__parameters:

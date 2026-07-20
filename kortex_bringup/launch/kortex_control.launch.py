@@ -64,14 +64,10 @@ def load_and_apply_prefix(
                 # Leave the arm in Kinova's single-level firmware gravity hold.  The
                 # admittance controller remains active as a state-only wrench estimator.
                 parameters["state_only"] = True
-            parameters["admittance"]["selected_axes"] = [
-                force_test_response,
-                force_test_response,
-                force_test_response,
-                False,
-                False,
-                False,
-            ]
+            if not force_test_response:
+                # Measurement mode is always motionless. In response mode, preserve
+                # the explicitly selected axes from the controller YAML.
+                parameters["admittance"]["selected_axes"] = [False] * 6
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="kortex_controllers_", suffix=".yaml", delete=False
     ) as out:
