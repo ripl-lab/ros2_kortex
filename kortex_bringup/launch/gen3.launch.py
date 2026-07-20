@@ -42,6 +42,13 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "vision",
+            default_value="false",
+            description="Use the Gen3 vision-module bracelet model.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "use_fake_hardware",
             default_value="false",
             description="Start robot with fake hardware mirroring command to its states.",
@@ -213,6 +220,7 @@ def generate_launch_description():
     robot_type = LaunchConfiguration("robot_type")
     robot_ip = LaunchConfiguration("robot_ip")
     dof = LaunchConfiguration("dof")
+    vision = LaunchConfiguration("vision")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
     robot_controller = LaunchConfiguration("robot_controller")
@@ -244,6 +252,7 @@ def generate_launch_description():
             "robot_type": robot_type,
             "robot_ip": robot_ip,
             "dof": dof,
+            "vision": vision,
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
             "robot_controller": robot_controller,

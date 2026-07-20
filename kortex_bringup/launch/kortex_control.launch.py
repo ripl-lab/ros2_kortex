@@ -82,6 +82,7 @@ def launch_setup(context, *args, **kwargs):
     robot_type = LaunchConfiguration("robot_type")
     robot_ip = LaunchConfiguration("robot_ip")
     dof = LaunchConfiguration("dof")
+    vision = LaunchConfiguration("vision")
     # General arguments
     controllers_file = LaunchConfiguration("controllers_file")
     description_package = LaunchConfiguration("description_package")
@@ -138,6 +139,9 @@ def launch_setup(context, *args, **kwargs):
             " ",
             "dof:=",
             dof,
+            " ",
+            "vision:=",
+            vision,
             " ",
             "prefix:=",
             prefix,
@@ -411,6 +415,13 @@ def generate_launch_description():
             "description_file",
             default_value="kinova.urdf.xacro",
             description="URDF/XACRO description file with the robot.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "vision",
+            default_value="false",
+            description="Use the Gen3 vision-module bracelet model.",
         )
     )
     declared_arguments.append(

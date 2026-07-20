@@ -11,6 +11,7 @@ def generate_launch_description():
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
     robot_ip = LaunchConfiguration("robot_ip")
+    vision = LaunchConfiguration("vision")
     launch_rviz = LaunchConfiguration("launch_rviz")
     visualize_wrench = LaunchConfiguration("visualize_wrench")
     gripper = LaunchConfiguration("gripper")
@@ -68,6 +69,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "robot_ip": robot_ip,
+            "vision": vision,
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
             "controllers_file": "ros2_controllers_admittance.yaml",
@@ -119,6 +121,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_ip", default_value="192.168.1.10"),
+            DeclareLaunchArgument(
+                "vision",
+                default_value="true",
+                description="Display and model the installed Gen3 vision module.",
+            ),
             DeclareLaunchArgument("use_fake_hardware", default_value="true"),
             DeclareLaunchArgument("fake_sensor_commands", default_value="true"),
             DeclareLaunchArgument("launch_rviz", default_value="true"),
@@ -151,7 +158,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "payload_cog_z",
-                default_value="0.0473",
+                default_value="0.0",
                 description="Payload center of gravity Z in end_effector_link.",
             ),
             DeclareLaunchArgument(
