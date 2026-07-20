@@ -50,8 +50,18 @@ def load_and_apply_prefix(
             params["admittance"]["selected_axes"] = selected_axes
             params["admittance"]["mass"] = [force_test_mass] * 3 + [10.0] * 3
             params["admittance"]["damping_ratio"] = [force_test_damping_ratio] * 6
-            params["admittance"]["stiffness"] = [force_test_stiffness] * 3 + [0.0] * 3
+            # Keep all six Cartesian directions constrained while enabling force
+            # response on only the requested translation axis. Zero rotational
+            # stiffness permits the redundant 7-DoF arm to drift in orientation.
+            params["admittance"]["stiffness"] = [force_test_stiffness] * 3 + [20.0] * 3
             params["admittance"]["joint_damping"] = force_test_joint_damping
+            params["admittance"]["nullspace_stiffness"] = 4.0
+            params["admittance"]["nullspace_damping_ratio"] = 1.0
+            params["admittance"]["max_tracking_error"] = 0.05
+            params["admittance"]["max_cartesian_acceleration"] = 0.5
+            params["admittance"]["max_joint_acceleration"] = 0.5
+            params["admittance"]["max_joint_velocity"] = 0.1
+            params["admittance"]["max_joint_displacement"] = 0.15
             params["joint_effort_wrench_estimator"]["damping"] = 0.05
             params["ft_sensor"]["filter_coefficient"] = 0.05
             params["control"]["frame"]["id"] = f"{prefix}base_link"

@@ -808,10 +808,19 @@ CallbackReturn KortexMultiInterfaceHardware::on_deactivate(
   RCLCPP_INFO(LOGGER, "Deactivating KortexMultiInterfaceHardware...");
   stopWrenchBiasService();
 
+  // Stop producing cyclic commands before leaving low-level servoing. Otherwise a
+  // controller update racing with deactivation can send one more Refresh(command)
+  // after the mode switch and trigger WRONG_SERVOING_MODE.
+  block_write = true;
+  joint_based_controller_running_ = false;
+  twist_controller_running_ = false;
+  std::fill(arm_commands_velocities_.begin(), arm_commands_velocities_.end(), 0.0);
+
   auto servoing_mode = k_api::Base::ServoingModeInformation();
   // Set back the servoing mode to Single Level Servoing
   servoing_mode.set_servoing_mode(k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING);
   base_.SetServoingMode(servoing_mode);
+  arm_mode_ = k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING;
 
   // Close API session
   session_manager_.CloseSession();
@@ -856,9 +865,10 @@ return_type KortexMultiInterfaceHardware::read(
     arm_velocities_[i] = KortexMathUtil::toRad(feedback_.actuators(i).velocity());  // rad/sec
     // read position
     num_turns_tmp_ = 0;
-    arm_positions_[i] = KortexMathUtil::wrapRadiansFromMinusPiToPi(
-      KortexMathUtil::toRad(feedback_.actuators(i).position()),
-      num_turns_tmp_);  // rad
+    const double wrapped_position = KortexMathUtil::wrapRadiansFromMinusPiToPi(
+      KortexMathUtil::toRad(feedback_.actuators(i).position()), num_turns_tmp_);
+    arm_positions_[i] =
+      KortexMathUtil::unwrapRadiansNear(wrapped_position, arm_positions_[i]);  // rad
 
     in_fault_ += (feedback_.actuators(i).fault_bank_a() + feedback_.actuators(i).fault_bank_b());
 
@@ -981,7 +991,10 @@ return_type KortexMultiInterfaceHardware::write(
       {
         limitJointPositionCommands(period.seconds());
         // send commands to the joints
-        sendJointCommands();
+        if (!sendJointCommands())
+        {
+          return return_type::ERROR;
+        }
       }
       else
       {
@@ -1166,7 +1179,7 @@ void KortexMultiInterfaceHardware::prepareCommands()
   }
 }
 
-void KortexMultiInterfaceHardware::sendJointCommands()
+bool KortexMultiInterfaceHardware::sendJointCommands()
 {
   // identifier++
   incrementId();
@@ -1178,6 +1191,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   {
     feedback_ = base_cyclic_.Refresh(base_command_);
     recordFeedbackRefresh();
+    return true;
   }
   catch (k_api::KDetailedException & ex)
   {
@@ -1207,6 +1221,15 @@ void KortexMultiInterfaceHardware::sendJointCommands()
     recordFeedbackRefresh();
     RCLCPP_ERROR_STREAM(LOGGER, "Standard exception: " << ex_std.what());
   }
+
+  // A failed cyclic command means command delivery is no longer trustworthy.
+  // Stop the controller-facing write path instead of reporting a successful
+  // update and allowing the robot to spring toward a stale command on recovery.
+  block_write = true;
+  joint_based_controller_running_ = false;
+  std::fill(arm_commands_velocities_.begin(), arm_commands_velocities_.end(), 0.0);
+  RCLCPP_ERROR(LOGGER, "Cyclic joint command failed; blocking further hardware writes.");
+  return false;
 }
 
 void KortexMultiInterfaceHardware::incrementId()

@@ -132,7 +132,7 @@ def generate_launch_description():
             DeclareLaunchArgument("visualize_wrench", default_value="true"),
             DeclareLaunchArgument(
                 "gripper",
-                default_value="robotiq_2f_85",
+                default_value="",
                 choices=["", "robotiq_2f_85", "robotiq_2f_140"],
                 description="Optional gripper attached to the Gen3.",
             ),

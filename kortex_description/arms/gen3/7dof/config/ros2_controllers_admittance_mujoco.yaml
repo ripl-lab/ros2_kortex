@@ -78,8 +78,15 @@ ${prefix}/admittance_controller:
         force: ${payload_weight}
 
     admittance:
-      selected_axes: [true, true, true, false, false, false]
-      mass: [8.0, 8.0, 8.0, 10.0, 10.0, 10.0]
+      selected_axes: [true, false, false, false, false, false]
+      mass: [12.0, 12.0, 12.0, 10.0, 10.0, 10.0]
       damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-      stiffness: [40.0, 40.0, 40.0, 0.0, 0.0, 0.0]
-      joint_damping: 5.0
+      stiffness: [200.0, 200.0, 200.0, 20.0, 20.0, 20.0]
+      joint_damping: 10.0
+      nullspace_stiffness: 4.0
+      nullspace_damping_ratio: 1.0
+      max_tracking_error: 0.05
+      max_cartesian_acceleration: 0.5
+      max_joint_acceleration: 0.5
+      max_joint_velocity: 0.1
+      max_joint_displacement: 0.15

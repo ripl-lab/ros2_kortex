@@ -46,6 +46,15 @@ double KortexMathUtil::wrapRadiansFromMinusPiToPi(double rad_not_wrapped, int & 
   return rad_not_wrapped;
 }
 
+double KortexMathUtil::unwrapRadiansNear(double wrapped_radians, double reference_radians)
+{
+  if (!std::isfinite(wrapped_radians) || !std::isfinite(reference_radians))
+  {
+    return wrapped_radians;
+  }
+  return reference_radians + std::remainder(wrapped_radians - reference_radians, 2.0 * M_PI);
+}
+
 double KortexMathUtil::wrapDegreesFromZeroTo360(double deg_not_wrapped)
 {
   int n;

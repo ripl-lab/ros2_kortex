@@ -20,6 +20,7 @@ public:
   static int getNumberOfTurns(double rad_not_wrapped);
   static double wrapRadiansFromMinusPiToPi(double rad_not_wrapped);
   static double wrapRadiansFromMinusPiToPi(double rad_not_wrapped, int & number_of_turns);
+  static double unwrapRadiansNear(double wrapped_radians, double reference_radians);
   static double wrapDegreesFromZeroTo360(double deg_not_wrapped);
   static double wrapDegreesFromZeroTo360(double deg_not_wrapped, int & number_of_turns);
   static double relative_position_from_absolute(

@@ -90,6 +90,10 @@ if(BUILD_TESTING)
   target_include_directories(test_wrench_utils PRIVATE include)
   target_link_libraries(test_wrench_utils KortexApiCpp)
   ament_target_dependencies(test_wrench_utils SYSTEM kortex_api)
+  ament_add_gtest(test_kortex_math_util
+    test/test_kortex_math_util.cpp
+    src/kortex_math_util.cpp)
+  target_include_directories(test_kortex_math_util PRIVATE include)
 endif()
 
 ## EXPORTS
