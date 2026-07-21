@@ -134,6 +134,29 @@ def generate_launch_description():
             description="Enable admittance motion from the estimated external wrench.",
         )
     )
+    declared_arguments.extend(
+        [
+            DeclareLaunchArgument(
+                "admittance_damping",
+                default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
+            ),
+            DeclareLaunchArgument("nullspace_stiffness", default_value="1.0"),
+            DeclareLaunchArgument("move_and_stay_enabled", default_value="true"),
+            DeclareLaunchArgument(
+                "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
+            ),
+            DeclareLaunchArgument(
+                "move_and_stay_torque_deadband", default_value="0.2, 0.2, 0.2"
+            ),
+            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.25"),
+            DeclareLaunchArgument(
+                "move_and_stay_linear_velocity_threshold", default_value="0.005"
+            ),
+            DeclareLaunchArgument(
+                "move_and_stay_angular_velocity_threshold", default_value="0.02"
+            ),
+        ]
+    )
     declared_arguments.append(
         DeclareLaunchArgument(
             "include_clarius",
@@ -233,6 +256,18 @@ def generate_launch_description():
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    admittance_damping = LaunchConfiguration("admittance_damping")
+    nullspace_stiffness = LaunchConfiguration("nullspace_stiffness")
+    move_and_stay_enabled = LaunchConfiguration("move_and_stay_enabled")
+    move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
+    move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
+    move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
+    move_and_stay_linear_velocity_threshold = LaunchConfiguration(
+        "move_and_stay_linear_velocity_threshold"
+    )
+    move_and_stay_angular_velocity_threshold = LaunchConfiguration(
+        "move_and_stay_angular_velocity_threshold"
+    )
     include_clarius = LaunchConfiguration("include_clarius")
     feedback_timeout = LaunchConfiguration("feedback_timeout")
     wrench_filter_coefficient = LaunchConfiguration("wrench_filter_coefficient")
@@ -265,6 +300,14 @@ def generate_launch_description():
             "payload_cog_z": payload_cog_z,
             "payload_weight": payload_weight,
             "force_test_response": force_test_response,
+            "admittance_damping": admittance_damping,
+            "nullspace_stiffness": nullspace_stiffness,
+            "move_and_stay_enabled": move_and_stay_enabled,
+            "move_and_stay_force_deadband": move_and_stay_force_deadband,
+            "move_and_stay_torque_deadband": move_and_stay_torque_deadband,
+            "move_and_stay_settle_time": move_and_stay_settle_time,
+            "move_and_stay_linear_velocity_threshold": move_and_stay_linear_velocity_threshold,
+            "move_and_stay_angular_velocity_threshold": move_and_stay_angular_velocity_threshold,
             "include_clarius": include_clarius,
             "feedback_timeout": feedback_timeout,
             "wrench_filter_coefficient": wrench_filter_coefficient,

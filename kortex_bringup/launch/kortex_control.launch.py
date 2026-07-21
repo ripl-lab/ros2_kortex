@@ -114,6 +114,18 @@ def launch_setup(context, *args, **kwargs):
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    admittance_damping = LaunchConfiguration("admittance_damping")
+    nullspace_stiffness = LaunchConfiguration("nullspace_stiffness")
+    move_and_stay_enabled = LaunchConfiguration("move_and_stay_enabled")
+    move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
+    move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
+    move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
+    move_and_stay_linear_velocity_threshold = LaunchConfiguration(
+        "move_and_stay_linear_velocity_threshold"
+    )
+    move_and_stay_angular_velocity_threshold = LaunchConfiguration(
+        "move_and_stay_angular_velocity_threshold"
+    )
 
     # if we are using fake hardware then we can't use the internal gripper communications of the hardware
     use_fake_hardware_value = use_fake_hardware.perform(context)
@@ -222,6 +234,14 @@ def launch_setup(context, *args, **kwargs):
                     "payload_cog_z": payload_cog_z.perform(context),
                     "payload_weight": payload_weight.perform(context),
                     "gripper_joint_name": gripper_joint_name.perform(context),
+                    "admittance_damping": admittance_damping.perform(context),
+                    "nullspace_stiffness": nullspace_stiffness.perform(context),
+                    "move_and_stay_enabled": move_and_stay_enabled.perform(context),
+                    "move_and_stay_force_deadband": move_and_stay_force_deadband.perform(context),
+                    "move_and_stay_torque_deadband": move_and_stay_torque_deadband.perform(context),
+                    "move_and_stay_settle_time": move_and_stay_settle_time.perform(context),
+                    "move_and_stay_linear_velocity_threshold": move_and_stay_linear_velocity_threshold.perform(context),
+                    "move_and_stay_angular_velocity_threshold": move_and_stay_angular_velocity_threshold.perform(context),
                 },
                 force_test_response=force_test_response.perform(context).lower() == "true",
                 measurement_only=(
@@ -482,6 +502,29 @@ def generate_launch_description():
             default_value="true",
             description="Enable admittance motion from the estimated external wrench.",
         )
+    )
+    declared_arguments.extend(
+        [
+            DeclareLaunchArgument(
+                "admittance_damping",
+                default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
+            ),
+            DeclareLaunchArgument("nullspace_stiffness", default_value="1.0"),
+            DeclareLaunchArgument("move_and_stay_enabled", default_value="true"),
+            DeclareLaunchArgument(
+                "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
+            ),
+            DeclareLaunchArgument(
+                "move_and_stay_torque_deadband", default_value="0.2, 0.2, 0.2"
+            ),
+            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.25"),
+            DeclareLaunchArgument(
+                "move_and_stay_linear_velocity_threshold", default_value="0.005"
+            ),
+            DeclareLaunchArgument(
+                "move_and_stay_angular_velocity_threshold", default_value="0.02"
+            ),
+        ]
     )
     declared_arguments.append(
         DeclareLaunchArgument(

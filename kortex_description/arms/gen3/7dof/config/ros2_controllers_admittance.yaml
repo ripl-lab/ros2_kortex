@@ -109,15 +109,26 @@ ${prefix}/admittance_controller:
         - false
       mass: [12.0, 12.0, 12.0, 10.0, 10.0, 10.0]
       damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-      stiffness: [200.0, 200.0, 200.0, 20.0, 20.0, 20.0]
+      damping: [${admittance_damping}]
+      stiffness: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
       joint_damping: 10.0
-      nullspace_stiffness: 4.0
+      nullspace_stiffness: ${nullspace_stiffness}
       nullspace_damping_ratio: 1.0
+      joint_limit_margin: 0.1745329252
+      joint_limit_soft_zone: 0.35
+      joint_limit_max_weight: 100.0
+      move_and_stay:
+        enabled: ${move_and_stay_enabled}
+        force_deadband: [${move_and_stay_force_deadband}]
+        torque_deadband: [${move_and_stay_torque_deadband}]
+        settle_time: ${move_and_stay_settle_time}
+        linear_velocity_threshold: ${move_and_stay_linear_velocity_threshold}
+        angular_velocity_threshold: ${move_and_stay_angular_velocity_threshold}
       max_tracking_error: 0.05
       max_cartesian_acceleration: 0.5
       max_joint_acceleration: 0.5
       max_joint_velocity: 0.1
-      max_joint_displacement: 0.15
+      max_joint_displacement: 0.0
 
 ${prefix}/twist_controller:
   ros__parameters:

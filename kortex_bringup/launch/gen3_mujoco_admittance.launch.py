@@ -50,18 +50,27 @@ def load_and_apply_prefix(
             params["admittance"]["selected_axes"] = selected_axes
             params["admittance"]["mass"] = [force_test_mass] * 3 + [10.0] * 3
             params["admittance"]["damping_ratio"] = [force_test_damping_ratio] * 6
-            # Keep all six Cartesian directions constrained while enabling force
-            # response on only the requested translation axis. Zero rotational
-            # stiffness permits the redundant 7-DoF arm to drift in orientation.
-            params["admittance"]["stiffness"] = [force_test_stiffness] * 3 + [20.0] * 3
+            params["admittance"]["damping"] = [80.0] * 3 + [15.0] * 3
+            params["admittance"]["stiffness"] = [0.0] * 6
             params["admittance"]["joint_damping"] = force_test_joint_damping
-            params["admittance"]["nullspace_stiffness"] = 4.0
+            params["admittance"]["nullspace_stiffness"] = 1.0
             params["admittance"]["nullspace_damping_ratio"] = 1.0
+            params["admittance"]["joint_limit_margin"] = 0.1745329252
+            params["admittance"]["joint_limit_soft_zone"] = 0.35
+            params["admittance"]["joint_limit_max_weight"] = 100.0
+            params["admittance"]["move_and_stay"] = {
+                "enabled": True,
+                "force_deadband": [2.0, 2.0, 2.0],
+                "torque_deadband": [0.2, 0.2, 0.2],
+                "settle_time": 0.25,
+                "linear_velocity_threshold": 0.005,
+                "angular_velocity_threshold": 0.02,
+            }
             params["admittance"]["max_tracking_error"] = 0.05
             params["admittance"]["max_cartesian_acceleration"] = 0.5
             params["admittance"]["max_joint_acceleration"] = 0.5
             params["admittance"]["max_joint_velocity"] = 0.1
-            params["admittance"]["max_joint_displacement"] = 0.15
+            params["admittance"]["max_joint_displacement"] = 0.0
             params["joint_effort_wrench_estimator"]["damping"] = 0.05
             params["ft_sensor"]["filter_coefficient"] = 0.05
             params["control"]["frame"]["id"] = f"{prefix}base_link"
