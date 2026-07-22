@@ -213,8 +213,6 @@ The force controls are:
 - `force_test_duration:=2.0` releases the physical load after two seconds of simulation time.
 - `force_test_start_delay:=1.0` lets controllers initialize before the timed load begins.
 - `force_test_mass:=8.0` sets the virtual translational mass in kilograms.
-- `force_test_damping_ratio:=2.0` sets the virtual Cartesian damping ratio.
-- `force_test_stiffness:=100.0` sets translational stiffness in N/m.
 - `force_test_joint_damping:=10.0` sets admittance inverse-kinematics joint damping.
 
 The controller also bounds the virtual motion with measured-state tracking anti-windup. Its
@@ -266,9 +264,11 @@ post-settle observation window. Both tolerances can be overridden with command-l
 the same check with both `force_test_response:=false` (estimator-only hold) and
 `force_test_response:=true` (compliant response) when validating controller stability.
 
-When `force_test_response:=true`, the fixture sets the translational stiffness to 100 N/m. A steady
-10 N force should therefore produce approximately 0.10 m of tool displacement on the selected
-axis. Tool motion can be observed in the GUI or from the base-to-tool transform:
+When `force_test_response:=true`, the controller uses zero Cartesian stiffness with explicit
+Cartesian damping and bounded acceleration and velocity. The resulting displacement depends on
+the force duration and motion limits rather than a static `force / stiffness` ratio. After the
+force is released, move-and-stay mode holds the displaced pose. Tool motion can be observed in the
+GUI or from the base-to-tool transform:
 
 ```bash
 ros2 run tf2_ros tf2_echo base_link end_effector_link

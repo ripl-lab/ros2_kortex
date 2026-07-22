@@ -68,11 +68,8 @@ ${prefix}/admittance_controller:
       observer_gains: [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0]
 
     kinematics:
-      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
-      plugin_package: kinematics_interface
       base: ${prefix}base_link
       tip: ${prefix}end_effector_link
-      group_name: arm
       alpha: 0.0005
 
     ft_sensor:

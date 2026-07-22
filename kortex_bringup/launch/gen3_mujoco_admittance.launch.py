@@ -27,8 +27,6 @@ def load_and_apply_prefix(
     force_test_response=True,
     force_test_axis="x",
     force_test_mass=8.0,
-    force_test_damping_ratio=2.0,
-    force_test_stiffness=100.0,
     force_test_joint_damping=10.0,
 ):
     with open(yaml_path) as f:
@@ -49,9 +47,6 @@ def load_and_apply_prefix(
             selected_axes[{"x": 0, "y": 1, "z": 2}[force_test_axis]] = force_test_response
             params["admittance"]["selected_axes"] = selected_axes
             params["admittance"]["mass"] = [force_test_mass] * 3 + [10.0] * 3
-            params["admittance"]["damping_ratio"] = [force_test_damping_ratio] * 6
-            params["admittance"]["damping"] = [80.0] * 3 + [15.0] * 3
-            params["admittance"]["stiffness"] = [0.0] * 6
             params["admittance"]["joint_damping"] = force_test_joint_damping
             params["admittance"]["nullspace_stiffness"] = 1.0
             params["admittance"]["nullspace_damping_ratio"] = 1.0
@@ -206,8 +201,6 @@ def launch_setup(context, *args, **kwargs):
     force_test_duration = LaunchConfiguration("force_test_duration")
     force_test_start_delay = LaunchConfiguration("force_test_start_delay")
     force_test_mass = LaunchConfiguration("force_test_mass")
-    force_test_damping_ratio = LaunchConfiguration("force_test_damping_ratio")
-    force_test_stiffness = LaunchConfiguration("force_test_stiffness")
     force_test_joint_damping = LaunchConfiguration("force_test_joint_damping")
     payload_cog_x = LaunchConfiguration("payload_cog_x")
     payload_cog_y = LaunchConfiguration("payload_cog_y")
@@ -283,8 +276,6 @@ def launch_setup(context, *args, **kwargs):
         force_test_response=force_test_response.perform(context).lower() == "true",
         force_test_axis=force_axis_str,
         force_test_mass=float(force_test_mass.perform(context)),
-        force_test_damping_ratio=float(force_test_damping_ratio.perform(context)),
-        force_test_stiffness=float(force_test_stiffness.perform(context)),
         force_test_joint_damping=float(force_test_joint_damping.perform(context)),
     )
 
@@ -450,6 +441,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "force_test_axis",
                 default_value="x",
+                choices=["x", "y", "z"],
                 description="World/base force axis: x, y, or z.",
             ),
             DeclareLaunchArgument(
@@ -471,16 +463,6 @@ def generate_launch_description():
                 "force_test_mass",
                 default_value="8.0",
                 description="Virtual translational mass in kilograms.",
-            ),
-            DeclareLaunchArgument(
-                "force_test_damping_ratio",
-                default_value="2.0",
-                description="Virtual Cartesian damping ratio.",
-            ),
-            DeclareLaunchArgument(
-                "force_test_stiffness",
-                default_value="100.0",
-                description="Virtual translational stiffness in newtons per metre.",
             ),
             DeclareLaunchArgument(
                 "force_test_joint_damping",

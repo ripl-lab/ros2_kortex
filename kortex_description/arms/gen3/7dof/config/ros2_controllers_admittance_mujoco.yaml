@@ -47,11 +47,8 @@ ${prefix}/admittance_controller:
       observer_gains: [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0]
 
     kinematics:
-      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
-      plugin_package: kinematics_interface
       base: ${prefix}base_link
       tip: ${prefix}tool_frame
-      group_name: arm
       alpha: 0.0005
 
     ft_sensor:
@@ -81,8 +78,9 @@ ${prefix}/admittance_controller:
     admittance:
       selected_axes: [true, false, false, false, false, false]
       mass: [12.0, 12.0, 12.0, 10.0, 10.0, 10.0]
-      # damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-      damping: [80, 80, 80, 15, 15, 15]
+      # Required by the parameter schema; explicit damping below takes precedence.
+      damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+      damping: [80.0, 80.0, 80.0, 15.0, 15.0, 15.0]
       stiffness: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
       joint_damping: 10.0
       nullspace_stiffness: 1.0

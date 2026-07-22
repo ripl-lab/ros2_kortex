@@ -79,7 +79,6 @@ def load_and_apply_prefix(
     ) as out:
         yaml.dump(data, out, default_flow_style=False)
         resolved_path = out.name
-    print(f"[DEBUG] Saved resolved YAML to: {resolved_path}")
     return resolved_path
 
 
