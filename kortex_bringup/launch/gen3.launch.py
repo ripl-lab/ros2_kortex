@@ -43,7 +43,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "vision",
-            default_value="false",
+            default_value="true",
             description="Use the Gen3 vision-module bracelet model.",
         )
     )
@@ -137,11 +137,30 @@ def generate_launch_description():
     declared_arguments.extend(
         [
             DeclareLaunchArgument(
+                "admittance_mode",
+                default_value="move_and_stay",
+                description="Admittance behavior: 'move_and_stay' or 'spring'.",
+            ),
+            DeclareLaunchArgument(
                 "admittance_damping",
                 default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
+                description="Explicit Cartesian damping used by move-and-stay mode.",
             ),
-            DeclareLaunchArgument("nullspace_stiffness", default_value="1.0"),
-            DeclareLaunchArgument("move_and_stay_enabled", default_value="true"),
+            DeclareLaunchArgument(
+                "admittance_stiffness",
+                default_value="200.0, 200.0, 200.0, 20.0, 20.0, 20.0",
+                description="Cartesian stiffness used by spring mode.",
+            ),
+            DeclareLaunchArgument(
+                "nullspace_stiffness",
+                default_value="1.0",
+                description="Nullspace stiffness used by move-and-stay mode.",
+            ),
+            DeclareLaunchArgument(
+                "spring_nullspace_stiffness",
+                default_value="4.0",
+                description="Nullspace posture stiffness used by spring mode.",
+            ),
             DeclareLaunchArgument(
                 "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
             ),
@@ -250,9 +269,11 @@ def generate_launch_description():
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    admittance_mode = LaunchConfiguration("admittance_mode")
     admittance_damping = LaunchConfiguration("admittance_damping")
+    admittance_stiffness = LaunchConfiguration("admittance_stiffness")
     nullspace_stiffness = LaunchConfiguration("nullspace_stiffness")
-    move_and_stay_enabled = LaunchConfiguration("move_and_stay_enabled")
+    spring_nullspace_stiffness = LaunchConfiguration("spring_nullspace_stiffness")
     move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
     move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
     move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
@@ -288,9 +309,11 @@ def generate_launch_description():
             "payload_cog_z": payload_cog_z,
             "payload_weight": payload_weight,
             "force_test_response": force_test_response,
+            "admittance_mode": admittance_mode,
             "admittance_damping": admittance_damping,
+            "admittance_stiffness": admittance_stiffness,
             "nullspace_stiffness": nullspace_stiffness,
-            "move_and_stay_enabled": move_and_stay_enabled,
+            "spring_nullspace_stiffness": spring_nullspace_stiffness,
             "move_and_stay_force_deadband": move_and_stay_force_deadband,
             "move_and_stay_torque_deadband": move_and_stay_torque_deadband,
             "move_and_stay_settle_time": move_and_stay_settle_time,

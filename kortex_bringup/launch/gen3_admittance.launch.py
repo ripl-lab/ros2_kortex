@@ -22,9 +22,11 @@ def generate_launch_description():
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    admittance_mode = LaunchConfiguration("admittance_mode")
     admittance_damping = LaunchConfiguration("admittance_damping")
+    admittance_stiffness = LaunchConfiguration("admittance_stiffness")
     nullspace_stiffness = LaunchConfiguration("nullspace_stiffness")
-    move_and_stay_enabled = LaunchConfiguration("move_and_stay_enabled")
+    spring_nullspace_stiffness = LaunchConfiguration("spring_nullspace_stiffness")
     move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
     move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
     move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
@@ -91,9 +93,11 @@ def generate_launch_description():
             "payload_cog_z": payload_cog_z,
             "payload_weight": controller_payload_weight,
             "force_test_response": force_test_response,
+            "admittance_mode": admittance_mode,
             "admittance_damping": admittance_damping,
+            "admittance_stiffness": admittance_stiffness,
             "nullspace_stiffness": nullspace_stiffness,
-            "move_and_stay_enabled": move_and_stay_enabled,
+            "spring_nullspace_stiffness": spring_nullspace_stiffness,
             "move_and_stay_force_deadband": move_and_stay_force_deadband,
             "move_and_stay_torque_deadband": move_and_stay_torque_deadband,
             "move_and_stay_settle_time": move_and_stay_settle_time,
@@ -215,16 +219,33 @@ def generate_launch_description():
                 ),
             ),
             DeclareLaunchArgument(
+                "admittance_mode",
+                default_value="move_and_stay",
+                description=(
+                    "'move_and_stay' forces zero Cartesian stiffness and enables pose latching; "
+                    "'spring' disables pose latching and applies admittance_stiffness."
+                ),
+            ),
+            DeclareLaunchArgument(
                 "admittance_damping",
                 default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
-                description="Explicit Cartesian damping [x,y,z,rx,ry,rz].",
+                description="Explicit Cartesian damping used by move-and-stay mode.",
+            ),
+            DeclareLaunchArgument(
+                "admittance_stiffness",
+                default_value="200.0, 200.0, 200.0, 20.0, 20.0, 20.0",
+                description="Spring-mode Cartesian stiffness [x,y,z,rx,ry,rz].",
             ),
             DeclareLaunchArgument(
                 "nullspace_stiffness",
                 default_value="1.0",
-                description="Posture stiffness about the most recently latched pose.",
+                description="Nullspace stiffness used by move-and-stay mode.",
             ),
-            DeclareLaunchArgument("move_and_stay_enabled", default_value="true"),
+            DeclareLaunchArgument(
+                "spring_nullspace_stiffness",
+                default_value="4.0",
+                description="Nullspace posture stiffness used by spring mode.",
+            ),
             DeclareLaunchArgument(
                 "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
             ),

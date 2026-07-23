@@ -104,13 +104,16 @@ ${prefix}/admittance_controller:
         - true
         - true
         - true
+        # - true
+        # - true
+        # - true
         - false
         - false
         - false
       mass: [12.0, 12.0, 12.0, 10.0, 10.0, 10.0]
       damping_ratio: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
       damping: [${admittance_damping}]
-      stiffness: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      stiffness: [${admittance_stiffness}]
       joint_damping: 10.0
       nullspace_stiffness: ${nullspace_stiffness}
       nullspace_damping_ratio: 1.0

@@ -44,6 +44,7 @@ def load_and_apply_prefix(
     substitutions=None,
     force_test_response=False,
     measurement_only=False,
+    derive_admittance_damping=False,
 ):
     with open(yaml_path) as f:
         text = f.read()
@@ -60,6 +61,11 @@ def load_and_apply_prefix(
         if admittance_node in data:
             parameters = data[admittance_node]["ros__parameters"]
             parameters["robot_description"] = robot_description
+            if derive_admittance_damping:
+                # An untyped `damping: []` is rejected by rclcpp on Humble.
+                # Omitting the optional parameter uses its declared empty-array
+                # default, causing damping to be derived from M, K, and zeta.
+                parameters["admittance"].pop("damping", None)
             if measurement_only:
                 # Leave the arm in Kinova's single-level firmware gravity hold.  The
                 # admittance controller remains active as a state-only wrench estimator.
@@ -114,9 +120,11 @@ def launch_setup(context, *args, **kwargs):
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    admittance_mode = LaunchConfiguration("admittance_mode")
     admittance_damping = LaunchConfiguration("admittance_damping")
+    admittance_stiffness = LaunchConfiguration("admittance_stiffness")
     nullspace_stiffness = LaunchConfiguration("nullspace_stiffness")
-    move_and_stay_enabled = LaunchConfiguration("move_and_stay_enabled")
+    spring_nullspace_stiffness = LaunchConfiguration("spring_nullspace_stiffness")
     move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
     move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
     move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
@@ -125,6 +133,26 @@ def launch_setup(context, *args, **kwargs):
     use_fake_hardware_value = use_fake_hardware.perform(context)
     if use_fake_hardware_value == "true":
         use_internal_bus_gripper_comm = "false"
+
+    admittance_mode_value = admittance_mode.perform(context).strip().lower()
+    if admittance_mode_value not in ("move_and_stay", "spring"):
+        raise RuntimeError(
+            "admittance_mode must be either 'move_and_stay' or 'spring', "
+            f"got '{admittance_mode_value}'"
+        )
+    if admittance_mode_value == "move_and_stay":
+        effective_damping = admittance_damping.perform(context)
+        effective_stiffness = "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"
+        effective_nullspace_stiffness = nullspace_stiffness.perform(context)
+        effective_move_and_stay = "true"
+    else:
+        # Match the original spring configuration from 8244bab: leaving the
+        # explicit damping parameter unset derives damping from mass,
+        # stiffness, and damping_ratio.
+        effective_damping = admittance_damping.perform(context)
+        effective_stiffness = admittance_stiffness.perform(context)
+        effective_nullspace_stiffness = spring_nullspace_stiffness.perform(context)
+        effective_move_and_stay = "false"
 
     robot_description_content = Command(
         [
@@ -228,9 +256,10 @@ def launch_setup(context, *args, **kwargs):
                     "payload_cog_z": payload_cog_z.perform(context),
                     "payload_weight": payload_weight.perform(context),
                     "gripper_joint_name": gripper_joint_name.perform(context),
-                    "admittance_damping": admittance_damping.perform(context),
-                    "nullspace_stiffness": nullspace_stiffness.perform(context),
-                    "move_and_stay_enabled": move_and_stay_enabled.perform(context),
+                    "admittance_damping": effective_damping,
+                    "admittance_stiffness": effective_stiffness,
+                    "nullspace_stiffness": effective_nullspace_stiffness,
+                    "move_and_stay_enabled": effective_move_and_stay,
                     "move_and_stay_force_deadband": move_and_stay_force_deadband.perform(context),
                     "move_and_stay_torque_deadband": move_and_stay_torque_deadband.perform(context),
                     "move_and_stay_settle_time": move_and_stay_settle_time.perform(context),
@@ -240,6 +269,7 @@ def launch_setup(context, *args, **kwargs):
                     use_fake_hardware.perform(context).lower() == "false"
                     and force_test_response.perform(context).lower() == "false"
                 ),
+                derive_admittance_damping=admittance_mode_value == "spring",
             )
         ],
         namespace=prefix_str,
@@ -498,11 +528,30 @@ def generate_launch_description():
     declared_arguments.extend(
         [
             DeclareLaunchArgument(
+                "admittance_mode",
+                default_value="move_and_stay",
+                description="Admittance behavior: 'move_and_stay' or 'spring'.",
+            ),
+            DeclareLaunchArgument(
                 "admittance_damping",
                 default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
+                description="Explicit Cartesian damping used by move-and-stay mode.",
             ),
-            DeclareLaunchArgument("nullspace_stiffness", default_value="1.0"),
-            DeclareLaunchArgument("move_and_stay_enabled", default_value="true"),
+            DeclareLaunchArgument(
+                "admittance_stiffness",
+                default_value="200.0, 200.0, 200.0, 20.0, 20.0, 20.0",
+                description="Cartesian stiffness used by spring mode.",
+            ),
+            DeclareLaunchArgument(
+                "nullspace_stiffness",
+                default_value="1.0",
+                description="Nullspace stiffness used by move-and-stay mode.",
+            ),
+            DeclareLaunchArgument(
+                "spring_nullspace_stiffness",
+                default_value="4.0",
+                description="Nullspace posture stiffness used by spring mode.",
+            ),
             DeclareLaunchArgument(
                 "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
             ),
