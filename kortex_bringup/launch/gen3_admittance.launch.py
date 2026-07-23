@@ -28,12 +28,6 @@ def generate_launch_description():
     move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
     move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
     move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
-    move_and_stay_linear_velocity_threshold = LaunchConfiguration(
-        "move_and_stay_linear_velocity_threshold"
-    )
-    move_and_stay_angular_velocity_threshold = LaunchConfiguration(
-        "move_and_stay_angular_velocity_threshold"
-    )
     include_clarius = LaunchConfiguration("include_clarius")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
     feedback_timeout = LaunchConfiguration("feedback_timeout")
@@ -103,8 +97,6 @@ def generate_launch_description():
             "move_and_stay_force_deadband": move_and_stay_force_deadband,
             "move_and_stay_torque_deadband": move_and_stay_torque_deadband,
             "move_and_stay_settle_time": move_and_stay_settle_time,
-            "move_and_stay_linear_velocity_threshold": move_and_stay_linear_velocity_threshold,
-            "move_and_stay_angular_velocity_threshold": move_and_stay_angular_velocity_threshold,
             "include_clarius": include_clarius,
             "feedback_timeout": feedback_timeout,
             "wrench_filter_coefficient": wrench_filter_coefficient,
@@ -206,13 +198,13 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "wrench_force_deadband",
-                default_value="2.0",
-                description="Force deadband in newtons for Kortex estimated external wrench.",
+                default_value="0.0",
+                description="Disabled here; contact release is handled once in admittance.",
             ),
             DeclareLaunchArgument(
                 "wrench_torque_deadband",
-                default_value="0.2",
-                description="Torque deadband in newton-meters for Kortex estimated external wrench.",
+                default_value="0.0",
+                description="Disabled here; contact release is handled once in admittance.",
             ),
             DeclareLaunchArgument(
                 "force_test_response",
@@ -239,13 +231,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "move_and_stay_torque_deadband", default_value="0.2, 0.2, 0.2"
             ),
-            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.25"),
-            DeclareLaunchArgument(
-                "move_and_stay_linear_velocity_threshold", default_value="0.005"
-            ),
-            DeclareLaunchArgument(
-                "move_and_stay_angular_velocity_threshold", default_value="0.02"
-            ),
+            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.05"),
             DeclareLaunchArgument(
                 "initial_positions_file",
                 default_value=PathJoinSubstitution(

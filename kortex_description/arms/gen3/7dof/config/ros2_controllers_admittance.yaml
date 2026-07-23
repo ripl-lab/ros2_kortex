@@ -122,8 +122,6 @@ ${prefix}/admittance_controller:
         force_deadband: [${move_and_stay_force_deadband}]
         torque_deadband: [${move_and_stay_torque_deadband}]
         settle_time: ${move_and_stay_settle_time}
-        linear_velocity_threshold: ${move_and_stay_linear_velocity_threshold}
-        angular_velocity_threshold: ${move_and_stay_angular_velocity_threshold}
       max_tracking_error: 0.05
       max_cartesian_acceleration: 0.5
       max_joint_acceleration: 0.5

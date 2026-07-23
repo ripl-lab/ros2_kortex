@@ -62,9 +62,7 @@ def load_and_apply_prefix(
                 "enabled": True,
                 "force_deadband": [2.0, 2.0, 2.0],
                 "torque_deadband": [0.2, 0.2, 0.2],
-                "settle_time": 0.25,
-                "linear_velocity_threshold": 0.005,
-                "angular_velocity_threshold": 0.02,
+                "settle_time": 0.05,
             }
             params["admittance"]["max_tracking_error"] = 0.05
             params["admittance"]["max_cartesian_acceleration"] = 0.5

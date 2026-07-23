@@ -18,8 +18,8 @@
     <xacro:arg name="gripper_max_velocity" default="100.0" />
     <xacro:arg name="gripper_max_force" default="100.0" />
     <xacro:arg name="wrench_filter_coefficient" default="0.05" />
-    <xacro:arg name="wrench_force_deadband" default="2.0" />
-    <xacro:arg name="wrench_torque_deadband" default="0.2" />
+    <xacro:arg name="wrench_force_deadband" default="0.0" />
+    <xacro:arg name="wrench_torque_deadband" default="0.0" />
     <xacro:arg name="wrench_force_limit" default="40.0" />
     <xacro:arg name="wrench_torque_limit" default="8.0" />
     <xacro:arg name="wrench_force_stop_threshold" default="80.0" />
