@@ -55,9 +55,9 @@ def load_and_apply_prefix(
             params["admittance"]["joint_damping"] = force_test_joint_damping
             params["admittance"]["nullspace_stiffness"] = 1.0
             params["admittance"]["nullspace_damping_ratio"] = 1.0
-            params["admittance"]["joint_limit_margin"] = 0.1745329252
-            params["admittance"]["joint_limit_soft_zone"] = 0.35
-            params["admittance"]["joint_limit_max_weight"] = 100.0
+            params["admittance"]["joint_limit_margin"] = 0.0
+            params["admittance"]["joint_limit_soft_zone"] = 0.0
+            params["admittance"]["joint_limit_max_weight"] = 1.0
             params["admittance"]["move_and_stay"] = {
                 "enabled": True,
                 "force_deadband": [2.0, 2.0, 2.0],

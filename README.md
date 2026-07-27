@@ -307,8 +307,10 @@ that the estimate is near zero before applying a known force. Accuracy depends o
 model and the configured payload mass and center of gravity; pass the `payload_weight` and
 `payload_cog_*` launch arguments if the attached tool differs from the defaults.
 
-Only after validating the estimate should compliant translation be enabled with
-`force_test_response:=true`.
+Only after validating both force and torque estimates should six-axis spring compliance be enabled
+with `force_test_response:=true`. The real Gen3 spring configuration uses the bounded-joint URDF
+limits directly; controller-side soft-limit weighting is disabled, while the hardware driver keeps
+its final 0.02 rad position guard.
 
 ---
 
