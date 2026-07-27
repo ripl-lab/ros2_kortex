@@ -42,6 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-pcl-conversions \
     ros-humble-pcl-ros \
     ros-humble-perception-pcl \
+    ros-humble-plotjuggler-ros \
     ros-humble-rmw-cyclonedds-cpp \
     ros-humble-ros2bag \
     ros-humble-rviz2 \
