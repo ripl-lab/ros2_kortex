@@ -65,7 +65,7 @@ ${prefix}/admittance_controller:
       damping: 0.05
       effort_mode: measured
       measured_effort_sign: -1.0
-      acceleration_filter_coefficient: 0.1
+      observer_gains: [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0]
 
     kinematics:
       plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL

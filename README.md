@@ -203,7 +203,8 @@ ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
 
 The fixture creates a physical sliding plunger in MuJoCo and applies the requested signed contact
 force to the tool. It does not inject a synthetic wrench directly into the controller. The
-controller estimates the wrench from `qfrc_actuator`, `qacc`, and the Pinocchio dynamics model.
+controller estimates the wrench with an impulse-momentum observer using `qfrc_actuator`, joint
+velocity, and the Pinocchio dynamics model; joint acceleration is not required.
 
 The force controls are:
 

@@ -38,12 +38,13 @@ ${prefix}/admittance_controller:
       - ${prefix}joint_6
       - ${prefix}joint_7
     command_interfaces: [position]
-    state_interfaces: [position, velocity, acceleration, effort]
+    state_interfaces: [position, velocity, effort]
     chainable_command_interfaces: [position, velocity]
     estimate_external_wrench_from_joint_efforts: true
     joint_effort_wrench_estimator:
       damping: 0.05
       effort_mode: measured
+      observer_gains: [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0]
 
     kinematics:
       plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
