@@ -234,6 +234,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "admittance_stiffness",
                 default_value="200.0, 200.0, 200.0, 20.0, 20.0, 20.0",
+                # default_value="10.0, 10.0, 10.0, 1.0, 1.0, 1.0",
                 description="Spring-mode Cartesian stiffness [x,y,z,rx,ry,rz].",
             ),
             DeclareLaunchArgument(
