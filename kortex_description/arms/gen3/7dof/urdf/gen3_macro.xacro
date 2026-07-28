@@ -104,6 +104,7 @@
         imported inertial model can hold the all-zero startup pose under gravity.
       -->
       <mujoco>
+        <option integrator="implicitfast"/>
         <default>
           <joint damping="2.0"/>
         </default>
@@ -114,14 +115,20 @@
         <contact>
           <exclude body1="${prefix}base_link" body2="${prefix}shoulder_link"/>
         </contact>
+        <!--
+          Motor ratings: joints 1-4 are 32 Nm nominal / 54 Nm peak;
+          joints 5-7 are 13 Nm nominal / 34 Nm peak. MuJoCo's position
+          actuator exposes one hard force limit, so forcerange uses the peak
+          rating while the nominal rating is retained here for reference.
+        -->
         <actuator>
-          <position name="position_joint_1" joint="${prefix}joint_1" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_2" joint="${prefix}joint_2" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_3" joint="${prefix}joint_3" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_4" joint="${prefix}joint_4" kp="200" kv="20" forcelimited="true" forcerange="-120 120"/>
-          <position name="position_joint_5" joint="${prefix}joint_5" kp="10" kv="2" forcelimited="true" forcerange="-9 9"/>
-          <position name="position_joint_6" joint="${prefix}joint_6" kp="10" kv="2" forcelimited="true" forcerange="-9 9"/>
-          <position name="position_joint_7" joint="${prefix}joint_7" kp="10" kv="2" forcelimited="true" forcerange="-9 9"/>
+          <position name="position_joint_1" joint="${prefix}joint_1" kp="500" kv="50" forcelimited="true" forcerange="-54 54"/>
+          <position name="position_joint_2" joint="${prefix}joint_2" kp="500" kv="50" forcelimited="true" forcerange="-54 54"/>
+          <position name="position_joint_3" joint="${prefix}joint_3" kp="500" kv="50" forcelimited="true" forcerange="-54 54"/>
+          <position name="position_joint_4" joint="${prefix}joint_4" kp="500" kv="50" forcelimited="true" forcerange="-54 54"/>
+          <position name="position_joint_5" joint="${prefix}joint_5" kp="100" kv="10" forcelimited="true" forcerange="-34 34"/>
+          <position name="position_joint_6" joint="${prefix}joint_6" kp="100" kv="10" forcelimited="true" forcerange="-34 34"/>
+          <position name="position_joint_7" joint="${prefix}joint_7" kp="100" kv="10" forcelimited="true" forcerange="-34 34"/>
         </actuator>
       </mujoco>
     </xacro:if>

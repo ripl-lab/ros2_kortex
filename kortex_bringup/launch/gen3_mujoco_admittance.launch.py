@@ -13,6 +13,7 @@ from launch.actions import (
     RegisterEventHandler,
 )
 from launch.event_handlers import OnProcessExit, OnProcessStart
+from launch.conditions import IfCondition
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -27,6 +28,8 @@ def load_and_apply_prefix(
     force_test_response=True,
     force_test_axis="x",
     force_test_mass=8.0,
+    force_test_damping_ratio=2.0,
+    force_test_stiffness=0.0,
     force_test_joint_damping=10.0,
 ):
     with open(yaml_path) as f:
@@ -67,6 +70,12 @@ def load_and_apply_prefix(
             params["joint_effort_wrench_estimator"]["damping"] = 0.05
             params["ft_sensor"]["filter_coefficient"] = 0.05
             params["control"]["frame"]["id"] = f"{prefix}base_link"
+        else:
+            # With no physical load fixture this is a measurement/pose demo.
+            # Do not feed estimator residuals back into Cartesian motion; doing
+            # so creates a self-excited torque oscillation that can saturate the
+            # simulated Gen3 actuators even though no external force exists.
+            params["admittance"]["selected_axes"] = [False] * 6
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="kortex_mujoco_controllers_", suffix=".yaml", delete=False
     ) as out:
@@ -74,7 +83,7 @@ def load_and_apply_prefix(
         return out.name
 
 
-def create_force_test_fixture(axis_name, signed_force, duration, start_delay):
+def create_force_test_fixture(axis_name, signed_force, duration, start_delay, initial_pose):
     axis_vectors = {
         "x": (1.0, 0.0, 0.0),
         "y": (0.0, 1.0, 0.0),
@@ -91,7 +100,19 @@ def create_force_test_fixture(axis_name, signed_force, duration, start_delay):
 
     sign = 1.0 if signed_force > 0.0 else -1.0
     direction = tuple(sign * value for value in axis_vectors[axis_name])
-    tool_center = (0.26700235, -0.02488211, 0.84396201)
+    pose_data = {
+        "home": {
+            "tool_center": (0.0, -0.00000393487733, 0.69204906045),
+            "qpos": "0 0.2617993877991494 3.141592653589793 -2.2689280275926285 0 0.9599310885968813 1.5707963267948966 0",
+        },
+        "zero": {
+            "tool_center": (0.0, -0.024859601294874054, 1.1873847699190927),
+            "qpos": "0 0 0 0 0 0 0 0",
+        },
+    }
+    if initial_pose not in pose_data:
+        raise RuntimeError("initial_pose must be 'home' or 'zero'")
+    tool_center = pose_data[initial_pose]["tool_center"]
     body_position = tuple(
         center - 0.049 * component for center, component in zip(tool_center, direction)
     )
@@ -174,8 +195,8 @@ def create_force_test_fixture(axis_name, signed_force, duration, start_delay):
         "key",
         {
             "name": "force_test_initial",
-            "qpos": "0 -0.35 0 1.25 0 0.85 0 0",
-            "ctrl": "0 -0.35 0 1.25 0 0.85 0 0",
+            "qpos": pose_data[initial_pose]["qpos"],
+            "ctrl": pose_data[initial_pose]["qpos"],
         },
     )
     ET.indent(root, space="  ")
@@ -186,14 +207,39 @@ def create_force_test_fixture(axis_name, signed_force, duration, start_delay):
         return output.name
 
 
+def create_initial_pose_keyframe(initial_pose):
+    poses = {
+        "home": "0 0.2617993877991494 3.141592653589793 -2.2689280275926285 0 0.9599310885968813 1.5707963267948966",
+        "zero": "0 0 0 0 0 0 0",
+    }
+    if initial_pose not in poses:
+        raise RuntimeError("initial_pose must be 'home' or 'zero'")
+    root = ET.Element("mujoco", {"model": f"Gen3 {initial_pose} initial pose"})
+    keyframe = ET.SubElement(root, "keyframe")
+    ET.SubElement(keyframe, "key", {
+        "name": f"gen3_{initial_pose}",
+        "qpos": poses[initial_pose],
+        "ctrl": poses[initial_pose],
+    })
+    ET.indent(root, space="  ")
+    with tempfile.NamedTemporaryFile(
+        mode="wb", prefix="kortex_initial_pose_", suffix=".xml", delete=False
+    ) as output:
+        ET.ElementTree(root).write(output, encoding="utf-8", xml_declaration=True)
+        return output.name
+
+
 def launch_setup(context, *args, **kwargs):
     prefix = LaunchConfiguration("prefix")
     robot_name = LaunchConfiguration("robot_name")
     gripper = LaunchConfiguration("gripper")
     launch_gui = LaunchConfiguration("launch_gui")
+    launch_rviz = LaunchConfiguration("launch_rviz")
+    visualize_wrench = LaunchConfiguration("visualize_wrench")
     realtime_factor = LaunchConfiguration("realtime_factor")
     simulation_frequency = LaunchConfiguration("simulation_frequency")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
+    initial_pose = LaunchConfiguration("initial_pose")
     force_test_fixture = LaunchConfiguration("force_test_fixture")
     force_test_response = LaunchConfiguration("force_test_response")
     force_test_axis = LaunchConfiguration("force_test_axis")
@@ -219,14 +265,12 @@ def launch_setup(context, *args, **kwargs):
     force_value = float(force_test_force.perform(context))
     force_duration = float(force_test_duration.perform(context))
     force_start_delay = float(force_test_start_delay.perform(context))
+    initial_pose_str = initial_pose.perform(context).lower()
     initial_positions_path = initial_positions_file.perform(context)
-    if force_test_enabled:
+    if not initial_positions_path:
+        config_name = "home_initial_positions.yaml" if initial_pose_str == "home" else "initial_positions.yaml"
         initial_positions_path = PathJoinSubstitution(
-            [
-                FindPackageShare("kortex_description"),
-                "config",
-                "admittance_initial_positions.yaml",
-            ]
+            [FindPackageShare("kortex_description"), "config", config_name]
         ).perform(context)
 
     robot_description_content = Command(
@@ -286,7 +330,9 @@ def launch_setup(context, *args, **kwargs):
     ]
     if force_test_enabled:
         input_files.append(create_force_test_fixture(
-            force_axis_str, force_value, force_duration, force_start_delay))
+            force_axis_str, force_value, force_duration, force_start_delay, initial_pose_str))
+    else:
+        input_files.append(create_initial_pose_keyframe(initial_pose_str))
 
     xacro2mjcf = Node(
         package="mujoco_ros2_control",
@@ -332,6 +378,10 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    applied_force = [0.0, 0.0, 0.0]
+    if force_test_enabled:
+        applied_force[{"x": 0, "y": 1, "z": 2}[force_axis_str]] = force_value
+
     mujoco = Node(
         package="mujoco_ros2_control",
         executable="mujoco_ros2_control",
@@ -343,6 +393,12 @@ def launch_setup(context, *args, **kwargs):
             {"realtime_factor": float(realtime_factor.perform(context))},
             {"robot_model_path": mujoco_model_file},
             {"show_gui": launch_gui.perform(context).lower() == "true"},
+            {"visualize_force_arrows": visualize_wrench.perform(context).lower() == "true"},
+            {"force_arrow_body": f"{prefix_str}end_effector_link"},
+            {"force_arrow_scale": 0.05},
+            {"applied_force": applied_force},
+            {"applied_force_start_delay": force_start_delay},
+            {"applied_force_duration": force_duration},
         ],
         remappings=[("/controller_manager/robot_description", "/robot_description")],
     )
@@ -352,6 +408,42 @@ def launch_setup(context, *args, **kwargs):
         executable="robot_state_publisher",
         output="both",
         parameters=[robot_description, {"use_sim_time": True}],
+    )
+    estimated_wrench_publisher = Node(
+        package="kortex_bringup",
+        executable="wrench_stamped_publisher.py",
+        name="estimated_wrench_publisher",
+        output="screen",
+        parameters=[
+            {
+                "use_sim_time": True,
+                "input_topic": "/admittance_controller/status",
+                "wrench_topic": "/estimated_wrench",
+                "frame_id": "base_link",
+            }
+        ],
+        condition=IfCondition(visualize_wrench),
+    )
+    torque_wrenches = Node(
+        package="kortex_bringup",
+        executable="joint_torque_wrenches.py",
+        output="screen",
+        parameters=[{"use_sim_time": True, "prefix": prefix_str}],
+        remappings=[("joint_states", f"/{prefix_str}/joint_states" if prefix_str else "/joint_states")],
+    )
+    rviz = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="mujoco_torque_rviz",
+        output="screen",
+        arguments=[
+            "-d",
+            PathJoinSubstitution(
+                [FindPackageShare("kortex_bringup"), "config", "mujoco_torque.rviz"]
+            ),
+        ],
+        parameters=[{"use_sim_time": True}],
+        condition=IfCondition(launch_rviz),
     )
 
     controller_manager_name = (
@@ -401,6 +493,9 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         robot_state_publisher,
+        estimated_wrench_publisher,
+        torque_wrenches,
+        rviz,
         xacro2mjcf,
         start_mujoco,
         start_mujoco_after_mesh_fixup,
@@ -415,18 +510,25 @@ def generate_launch_description():
             DeclareLaunchArgument("prefix", default_value=""),
             DeclareLaunchArgument(
                 "gripper",
-                default_value="robotiq_2f_85",
+                default_value="none",
                 choices=["none", "robotiq_2f_85"],
                 description="Optional gripper; use 'none' for the bare Gen3 arm.",
             ),
             DeclareLaunchArgument("launch_gui", default_value="true"),
+            DeclareLaunchArgument("launch_rviz", default_value="false"),
+            DeclareLaunchArgument("visualize_wrench", default_value="true"),
             DeclareLaunchArgument("realtime_factor", default_value="1.0"),
             DeclareLaunchArgument("simulation_frequency", default_value="1000.0"),
             DeclareLaunchArgument(
+                "initial_pose",
+                default_value="home",
+                choices=["home", "zero"],
+                description="Named MuJoCo initial pose.",
+            ),
+            DeclareLaunchArgument(
                 "initial_positions_file",
-                default_value=PathJoinSubstitution(
-                    [FindPackageShare("kortex_description"), "config", "initial_positions.yaml"]
-                ),
+                default_value="",
+                description="Optional YAML override; when empty, initial_pose selects the file.",
             ),
             DeclareLaunchArgument(
                 "force_test_fixture",
@@ -456,13 +558,23 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "force_test_start_delay",
-                default_value="1.0",
+                default_value="5.0",
                 description="Zero-force initialization time before applying the fixture load.",
             ),
             DeclareLaunchArgument(
                 "force_test_mass",
                 default_value="8.0",
                 description="Virtual translational mass in kilograms.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_damping_ratio",
+                default_value="2.0",
+                description="Virtual Cartesian damping ratio.",
+            ),
+            DeclareLaunchArgument(
+                "force_test_stiffness",
+                default_value="0.0",
+                description="Virtual translational stiffness in newtons per metre.",
             ),
             DeclareLaunchArgument(
                 "force_test_joint_damping",

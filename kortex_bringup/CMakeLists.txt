@@ -11,6 +11,9 @@ install(PROGRAMS
   scripts/inject_wrench.py
   scripts/wrench_stamped_publisher.py
   scripts/verify_mujoco_force_stop.py
+  scripts/demo_mujoco_pose.sh
+  scripts/demo_mujoco_forces.sh
+  scripts/joint_torque_wrenches.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
