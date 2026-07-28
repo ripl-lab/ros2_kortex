@@ -312,6 +312,22 @@ with `force_test_response:=true`. The real Gen3 spring configuration uses the bo
 limits directly; controller-side soft-limit weighting is disabled, while the hardware driver keeps
 its final 0.02 rad position guard.
 
+For free-hand scanning, use move-and-stay mode so the released pose becomes the new hold pose:
+
+```bash
+ros2 launch kortex_bringup gen3_admittance.launch.py \
+  robot_ip:=192.168.1.10 \
+  use_fake_hardware:=false \
+  force_test_response:=true \
+  admittance_mode:=move_and_stay
+```
+
+The real-robot profile filters the 1 kHz joint-effort wrench estimate and uses lower virtual
+rotational inertia than translation so an operator can command roll, pitch, and yaw with normal
+one-hand moments. Before scanning, hold the arm unloaded and confirm that all six components of
+`/admittance_controller/status.wrench_base.wrench` settle near zero. Incorrect payload weight or
+center of gravity appears primarily as a persistent torque and can cause unwanted rotation.
+
 ---
 
 ## CLARIUS SETUP

@@ -165,7 +165,7 @@ def generate_launch_description():
                 "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
             ),
             DeclareLaunchArgument(
-                "move_and_stay_torque_deadband", default_value="0.2, 0.2, 0.2"
+                "move_and_stay_torque_deadband", default_value="0.40, 0.40, 0.65"
             ),
             DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.0"),
         ]
@@ -187,7 +187,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "wrench_filter_coefficient",
-            default_value="0.05",
+            default_value="0.01",
             description="Low-pass filter coefficient for Kortex estimated external wrench.",
         )
     )

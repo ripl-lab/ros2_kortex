@@ -197,7 +197,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "wrench_filter_coefficient",
-                default_value="0.05",
+                default_value="0.01",
                 description="Low-pass filter coefficient for Kortex estimated external wrench.",
             ),
             DeclareLaunchArgument(
@@ -228,7 +228,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "admittance_damping",
-                default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
+                default_value="80.0, 80.0, 80.0, 1.0, 1.0, 1.0",
                 description="Explicit Cartesian damping used by move-and-stay mode.",
             ),
             DeclareLaunchArgument(
@@ -251,9 +251,9 @@ def generate_launch_description():
                 "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
             ),
             DeclareLaunchArgument(
-                "move_and_stay_torque_deadband", default_value="0.2, 0.2, 0.2"
+                "move_and_stay_torque_deadband", default_value="0.40, 0.40, 0.65"
             ),
-            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.05"),
+            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.02"),
             DeclareLaunchArgument(
                 "initial_positions_file",
                 default_value=PathJoinSubstitution(
