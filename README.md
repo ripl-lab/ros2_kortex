@@ -203,6 +203,11 @@ ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
   launch_gui:=true launch_rviz:=true initial_pose:=home force_test_fixture:=false
 ```
 
+To interactiovely push or pull the robot in the MuJCo window, double-click a
+robot link to select it, then hold **Ctrl** and drag with the **right mouse
+button**. Ctrl + left-drag applies a rotational perturbation. Release the mouse
+button to stop applying the perturbation.
+
 Choose `initial_pose:=home` or `initial_pose:=zero`. The `Measured Joint Torques` group contains
 seven native RViz Wrench displays fed by `geometry_msgs/WrenchStamped` topics.
 
