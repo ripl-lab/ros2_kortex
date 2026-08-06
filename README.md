@@ -376,7 +376,9 @@ center of gravity appears primarily as a persistent torque and can cause unwante
 
 ## CLARIUS SETUP
 
-**Note:** For MoveIt planing and replay rosbag only for now
+The Clarius description can be used by MoveIt, rosbag replay, and the Gen3 admittance-control
+launch. In the admittance launch it is attached through the Kinova wrist mount defined in the
+Gen3 description.
 
 1. Make sure that `colcon`, its extensions, and `vcs` are installed:
 
@@ -396,7 +398,6 @@ center of gravity appears primarily as a persistent torque and can cause unwante
     ```bash
     cd $COLCON_WS
     git clone -b tz/clarius_scanner --single-branch git@github.com:ripl-lab/ros2_kortex.git src/ros2_kortex
-    git clone git@github.com:ripl-lab/clarius_description.git
     vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.$ROS_DISTRO.repos
     vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.$ROS_DISTRO.repos
     ```
@@ -426,6 +427,25 @@ center of gravity appears primarily as a persistent torque and can cause unwante
     ```bash
     ros2 launch kortex_description view_robot.launch.py
     ```
+
+### Admittance control
+
+Enable the mount and probe model with `include_clarius:=true`:
+
+```bash
+ros2 launch kortex_bringup gen3_admittance.launch.py \
+  robot_ip:=192.168.1.10 \
+  use_fake_hardware:=false \
+  force_test_response:=false \
+  vision:=true \
+  include_clarius:=true \
+  launch_rviz:=true
+```
+
+The resulting fixed-link chain is
+`end_effector_link -> kinova_mount_link -> clarius_base_link -> clarius_sensor_frame`.
+Start with `force_test_response:=false` while validating the payload model and gravity
+compensation.
 
 ### MoveIt
 
