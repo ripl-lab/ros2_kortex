@@ -4,6 +4,7 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -14,6 +15,13 @@ def generate_launch_description():
     vision = LaunchConfiguration("vision")
     launch_rviz = LaunchConfiguration("launch_rviz")
     visualize_wrench = LaunchConfiguration("visualize_wrench")
+    visualization_force_threshold = LaunchConfiguration(
+        "visualization_force_threshold"
+    )
+    visualization_torque_threshold = LaunchConfiguration(
+        "visualization_torque_threshold"
+    )
+    visualization_show_torque = LaunchConfiguration("visualization_show_torque")
     gripper = LaunchConfiguration("gripper")
     gripper_joint_name = LaunchConfiguration("gripper_joint_name")
     use_internal_bus_gripper_comm = LaunchConfiguration("use_internal_bus_gripper_comm")
@@ -121,6 +129,15 @@ def generate_launch_description():
                 "input_topic": "/admittance_controller/status",
                 "wrench_topic": "/estimated_wrench",
                 "frame_id": "base_link",
+                "force_contact_threshold": ParameterValue(
+                    visualization_force_threshold, value_type=float
+                ),
+                "torque_contact_threshold": ParameterValue(
+                    visualization_torque_threshold, value_type=float
+                ),
+                "show_torque": ParameterValue(
+                    visualization_show_torque, value_type=bool
+                ),
             }
         ],
         condition=IfCondition(visualize_wrench),
@@ -146,6 +163,25 @@ def generate_launch_description():
             DeclareLaunchArgument("fake_sensor_commands", default_value="true"),
             DeclareLaunchArgument("launch_rviz", default_value="true"),
             DeclareLaunchArgument("visualize_wrench", default_value="true"),
+            DeclareLaunchArgument(
+                "visualization_force_threshold",
+                default_value="5.0",
+                description=(
+                    "Hide the RViz force arrow below this contact-force magnitude in newtons."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "visualization_show_torque",
+                default_value="true",
+                description="Also display the RViz torque arrow when true.",
+            ),
+            DeclareLaunchArgument(
+                "visualization_torque_threshold",
+                default_value="0.6",
+                description=(
+                    "Hide the RViz torque arrow below this contact-torque magnitude in newton-metres."
+                ),
+            ),
             DeclareLaunchArgument(
                 "gripper",
                 default_value="",
