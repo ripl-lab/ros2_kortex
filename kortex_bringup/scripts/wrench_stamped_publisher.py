@@ -14,12 +14,22 @@ class WrenchStampedPublisher(Node):
         self.declare_parameter("frame_id", "base_link")
         self.declare_parameter("publish_rate", 30.0)
         self.declare_parameter("hold_time", 2.0)
+        self.declare_parameter("force_contact_threshold", 5.0)
+        self.declare_parameter("torque_contact_threshold", 0.6)
+        self.declare_parameter("show_torque", True)
 
         input_topic = self.get_parameter("input_topic").value
         wrench_topic = self.get_parameter("wrench_topic").value
         self.frame_id = self.get_parameter("frame_id").value
         publish_rate = float(self.get_parameter("publish_rate").value)
         self.hold_time = float(self.get_parameter("hold_time").value)
+        self.force_contact_threshold = max(
+            0.0, float(self.get_parameter("force_contact_threshold").value)
+        )
+        self.torque_contact_threshold = max(
+            0.0, float(self.get_parameter("torque_contact_threshold").value)
+        )
+        self.show_torque = bool(self.get_parameter("show_torque").value)
 
         self.wrench = WrenchStamped().wrench
         self.last_msg_time = self.get_clock().now()
@@ -66,10 +76,22 @@ class WrenchStampedPublisher(Node):
                 z=sum(rotation_base_tool[row][2] * values[row] for row in range(3)),
             )
 
-        self.wrench = Wrench(
-            force=base_to_tool(msg.wrench_base.wrench.force),
-            torque=base_to_tool(msg.wrench_base.wrench.torque),
+        force = base_to_tool(msg.wrench_base.wrench.force)
+        force_norm = (force.x * force.x + force.y * force.y + force.z * force.z) ** 0.5
+        if force_norm < self.force_contact_threshold:
+            force = Vector3()
+
+        torque = (
+            base_to_tool(msg.wrench_base.wrench.torque)
+            if self.show_torque
+            else Vector3()
         )
+        torque_norm = (
+            torque.x * torque.x + torque.y * torque.y + torque.z * torque.z
+        ) ** 0.5
+        if torque_norm < self.torque_contact_threshold:
+            torque = Vector3()
+        self.wrench = Wrench(force=force, torque=torque)
         self.frame_id = (
             msg.ref_trans_base_ft.child_frame_id
             or msg.ft_sensor_frame.data
