@@ -19,3 +19,11 @@ repositories:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
     version: humble
+  clarius_interface:
+    type: git
+    url: git@github.com:westlab-uwo/clarius_interface.git
+    version: develop
+  clarius_description:
+    type: git
+    url: git@github.com:ripl-lab/clarius_description.git
+    version: main
