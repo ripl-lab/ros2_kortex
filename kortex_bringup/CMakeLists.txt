@@ -7,6 +7,7 @@ find_package(ament_cmake_python REQUIRED)
 # Install Python executables
 install(PROGRAMS
   scripts/check_estimated_force.py
+  scripts/estimate_payload_com.py
   scripts/test_huge_joint_space_jump.py
   scripts/inject_wrench.py
   scripts/wrench_stamped_publisher.py
