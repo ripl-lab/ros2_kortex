@@ -328,6 +328,41 @@ one-hand moments. Before scanning, hold the arm unloaded and confirm that all si
 `/admittance_controller/status.wrench_base.wrench` settle near zero. Incorrect payload weight or
 center of gravity appears primarily as a persistent torque and can cause unwanted rotation.
 
+To identify the center of mass of an attached rigid payload from static poses, first launch in
+measure-only mode with the Clarius model enabled:
+
+```bash
+ros2 launch kortex_bringup gen3_admittance.launch.py \
+  robot_ip:=192.168.1.10 \
+  use_fake_hardware:=false \
+  include_clarius:=true \
+  force_test_response:=false
+```
+
+In another terminal, run the interactive calibration using the measured combined mass:
+
+```bash
+ros2 run kortex_bringup estimate_payload_com.py --mass 0.536 --poses 15
+```
+
+Before sampling, the script publishes the 15 numbered target orientations to
+`/payload_com_calibration/poses`. To inspect them without starting calibration, run:
+
+```bash
+ros2 run kortex_bringup estimate_payload_com.py --mass 0.536 --poses 15 --preview-only
+```
+
+The RViz arrows share the current `clarius_base_link` position and show the target direction of its
+positive Z axis. They are orientation references only: the script does not command robot motion.
+
+At each prompt, move the arm slowly to a substantially different tool orientation, stop, and press
+Enter. The script rejects moving samples, robustly fits the CoM in `clarius_base_link`, and fits a
+constant offset for each joint so sensor zero error is not confused with payload gravity. Keep the
+complete mount, probe, fasteners, and normally supported cable section installed throughout the
+calibration. Copy the printed inertial origin into the `clarius_base_link` URDF, rebuild, and restart
+the launch. Leave `payload_weight:=0.0` because the 0.536 kg mass is then already represented in the
+Pinocchio model. Validate the result on several stationary poses that were not part of the fit.
+
 ---
 
 ## CLARIUS SETUP

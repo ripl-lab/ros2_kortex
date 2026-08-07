@@ -176,6 +176,19 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Payload CoM Calibration Poses
+      Namespaces:
+        payload_com_pose_axes: true
+        payload_com_pose_labels: true
+      Topic:
+        Depth: 1
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /payload_com_calibration/poses
+      Value: true
     - Accept NaN Values: false
       Alpha: 1
       Arrow Width: 0.30000001192092896
