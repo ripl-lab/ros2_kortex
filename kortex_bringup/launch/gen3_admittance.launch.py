@@ -53,6 +53,15 @@ def generate_launch_description():
             "'",
         ]
     )
+    effective_gripper = PythonExpression(
+        [
+            "'' if '",
+            include_clarius,
+            "' == 'true' else '",
+            gripper,
+            "'",
+        ]
+    )
     measurement_only = PythonExpression(
         [
             "'",
@@ -93,7 +102,7 @@ def generate_launch_description():
             "robot_pos_controller": "joint_trajectory_controller",
             "wrench_injector": wrench_injector_controller,
             "tool_wrench_broadcaster": "",
-            "gripper": gripper,
+            "gripper": effective_gripper,
             "gripper_joint_name": gripper_joint_name,
             "use_internal_bus_gripper_comm": use_internal_bus_gripper_comm,
             "payload_cog_x": payload_cog_x,
@@ -201,17 +210,17 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "payload_cog_x",
                 default_value="0.0",
-                description="Payload center of gravity X in end_effector_link.",
+                description="Additional payload center of gravity X in the active admittance frame.",
             ),
             DeclareLaunchArgument(
                 "payload_cog_y",
                 default_value="0.0",
-                description="Payload center of gravity Y in end_effector_link.",
+                description="Additional payload center of gravity Y in the active admittance frame.",
             ),
             DeclareLaunchArgument(
                 "payload_cog_z",
                 default_value="0.0",
-                description="Payload center of gravity Z in end_effector_link.",
+                description="Additional payload center of gravity Z in the active admittance frame.",
             ),
             DeclareLaunchArgument(
                 "payload_weight",
@@ -264,7 +273,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "admittance_damping",
-                default_value="80.0, 80.0, 80.0, 1.0, 1.0, 1.0",
+                default_value="80.0, 80.0, 80.0, 20.0, 20.0, 20.0",
                 description="Explicit Cartesian damping used by move-and-stay mode.",
             ),
             DeclareLaunchArgument(
@@ -284,10 +293,10 @@ def generate_launch_description():
                 description="Nullspace posture stiffness used by spring mode.",
             ),
             DeclareLaunchArgument(
-                "move_and_stay_force_deadband", default_value="2.0, 2.0, 2.0"
+                "move_and_stay_force_deadband", default_value="5.0, 5.0, 5.0"
             ),
             DeclareLaunchArgument(
-                "move_and_stay_torque_deadband", default_value="0.40, 0.40, 0.65"
+                "move_and_stay_torque_deadband", default_value="0.60, 0.60, 0.85"
             ),
             DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.02"),
             DeclareLaunchArgument(

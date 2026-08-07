@@ -238,6 +238,11 @@ def launch_setup(context, *args, **kwargs):
     )
 
     prefix_str = prefix.perform(context)
+    admittance_frame = (
+        f"{prefix_str}clarius_base_link"
+        if include_clarius.perform(context).lower() == "true"
+        else f"{prefix_str}end_effector_link"
+    )
     remapped_robot_description = (
         "/" + prefix_str + "/robot_description" if prefix_str else "/robot_description"
     )
@@ -255,6 +260,7 @@ def launch_setup(context, *args, **kwargs):
                     "payload_cog_y": payload_cog_y.perform(context),
                     "payload_cog_z": payload_cog_z.perform(context),
                     "payload_weight": payload_weight.perform(context),
+                    "admittance_frame": admittance_frame,
                     "gripper_joint_name": gripper_joint_name.perform(context),
                     "admittance_damping": effective_damping,
                     "admittance_stiffness": effective_stiffness,
