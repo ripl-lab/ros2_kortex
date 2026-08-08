@@ -27,3 +27,7 @@ repositories:
     type: git
     url: git@github.com:ripl-lab/clarius_description.git
     version: main
+  multilabel_segmentation:
+    type: git
+    url: git@github.com:westlab-uwo/multi-label_segmentation.git
+    version: feat/ros_support

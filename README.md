@@ -134,6 +134,16 @@ Useful options include:
 # Skip the full Clarius dependency setup while building a lighter development image.
 RUN_CLARIUS_SETUP=false ./.devcontainer/dev-docker.sh
 
+# Also compile the copied workspace into the image (normally unnecessary for bind-mount use).
+BUILD_WORKSPACE_IN_IMAGE=true ./.devcontainer/dev-docker.sh
+
+# Optionally download the private segmentation weights while building.
+CLARIUS_MODEL_URL='https://your-authorized-download/deeplabv3.pth' \
+  ./.devcontainer/dev-docker.sh
+
+# If an SSH agent is not running, select a host private key explicitly.
+HOST_SSH_KEY="$HOME/.ssh/id_ed25519" ./.devcontainer/dev-docker.sh
+
 # Display every supported option.
 ./.devcontainer/dev-docker.sh --help
 ```
@@ -145,6 +155,21 @@ container before building:
 sudo apt-get update
 rosdep install --ignore-src --from-paths src -y -r
 ```
+
+The full image installs Git LFS, imports `clarius_interface` and `multi-label_segmentation`, installs
+`clarius_interface/requirement.txt`, Pillow, and PySide6, then builds the ROS workspace. The
+segmentation model is not in Git; either provide an authorized `CLARIUS_MODEL_URL` during the image
+build or place
+`deeplabv3.pth` in `src/multilabel_segmentation/multi_label_segmentation/src/models/` afterward.
+Private Git repositories are cloned with BuildKit SSH forwarding. The key remains on the host and
+is exposed only to the repository-import build step; it is not copied into the image. The launcher
+prefers `SSH_AUTH_SOCK`, then `HOST_SSH_KEY`, then `~/.ssh/id_ed25519` or `~/.ssh/id_rsa`.
+The bundled `libcast.so` and `pyclariuscast.so` must match the Clarius App version because Cast does
+not provide forward or backward compatibility across App/API releases.
+By default the Docker build does not run `colcon build`: `dev-docker.sh` bind-mounts the host
+workspace over the image workspace, so those image-internal build artifacts would be hidden and
+wasted. Set `BUILD_WORKSPACE_IN_IMAGE=true` only when producing a standalone image without the
+workspace mount. BuildKit also retains the pip download cache across rebuilt layers.
 
 For graphical applications, the script forwards `DISPLAY` and mounts `/tmp/.X11-unix` when it is
 available. The host X server may also need to authorize the local container user.
@@ -414,6 +439,20 @@ Pinocchio model. Validate the result on several stationary poses that were not p
 The Clarius description can be used by MoveIt, rosbag replay, and the Gen3 admittance-control
 launch. In the admittance launch it is attached through the Kinova wrist mount defined in the
 Gen3 description.
+
+To start Gen3 admittance control, the Clarius Wi-Fi interface and segmentation, and one RViz window containing the robot, applied wrench, raw ultrasound, and segmentation image, run:
+
+```bash
+ros2 launch kortex_bringup gen3_admittance_clarius.launch.py \
+  robot_ip:=192.168.1.10 \
+  use_fake_hardware:=false \ force_test_response:=true \
+  start_clarius:=true \
+  vision:=true \
+  launch_rviz:=true \ 
+  clarius_config_file:=/workspace/ros2_kortex_ws/src/clarius_interface/clarius_ros/config/clarius.yaml
+```
+
+The wrapper always attaches the Clarius model and disables the gripper.
 
 1. Make sure that `colcon`, its extensions, and `vcs` are installed:
 
