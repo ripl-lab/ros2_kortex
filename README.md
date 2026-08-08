@@ -134,8 +134,11 @@ Useful options include:
 # Skip the full Clarius dependency setup while building a lighter development image.
 RUN_CLARIUS_SETUP=false ./.devcontainer/dev-docker.sh
 
-# Also compile the copied workspace into the image (normally unnecessary for bind-mount use).
-BUILD_WORKSPACE_IN_IMAGE=true ./.devcontainer/dev-docker.sh
+# Skip compiling the copied workspace into the image (the helper's bind mount hides it).
+BUILD_WORKSPACE_IN_IMAGE=false ./.devcontainer/dev-docker.sh
+
+# Build selected packages in the mounted workspace before opening the shell.
+./.devcontainer/dev-docker.sh --build-packages "clarius_ros kortex_bringup"
 
 # Optionally download the private segmentation weights while building.
 CLARIUS_MODEL_URL='https://your-authorized-download/deeplabv3.pth' \
@@ -166,10 +169,15 @@ is exposed only to the repository-import build step; it is not copied into the i
 prefers `SSH_AUTH_SOCK`, then `HOST_SSH_KEY`, then `~/.ssh/id_ed25519` or `~/.ssh/id_rsa`.
 The bundled `libcast.so` and `pyclariuscast.so` must match the Clarius App version because Cast does
 not provide forward or backward compatibility across App/API releases.
-By default the Docker build does not run `colcon build`: `dev-docker.sh` bind-mounts the host
-workspace over the image workspace, so those image-internal build artifacts would be hidden and
-wasted. Set `BUILD_WORKSPACE_IN_IMAGE=true` only when producing a standalone image without the
-workspace mount. BuildKit also retains the pip download cache across rebuilt layers.
+The Dockerfile builds the workspace by default so a standalone image can resolve imported packages
+such as `clarius_ros`. `dev-docker.sh` overrides this to false because it bind-mounts the host
+workspace over the image workspace, which would hide image-internal build artifacts; its command
+examples build the mounted workspace instead. BuildKit also retains the pip download cache across
+rebuilt layers.
+
+Use `--build-packages "package_a package_b"` (or the `BUILD_PACKAGES` environment variable) to
+build selected packages every time the helper starts. When the value is empty, initialization only
+imports missing repositories and prepares the virtual environment; it does not build any packages.
 
 For graphical applications, the script forwards `DISPLAY` and mounts `/tmp/.X11-unix` when it is
 available. The host X server may also need to authorize the local container user.

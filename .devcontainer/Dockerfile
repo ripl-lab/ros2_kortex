@@ -6,7 +6,9 @@ ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 ARG RUN_CLARIUS_SETUP=true
-ARG BUILD_WORKSPACE_IN_IMAGE=false
+# Build by default so packages imported below (including clarius_ros) are
+# registered in the image's ament index and are available at runtime.
+ARG BUILD_WORKSPACE_IN_IMAGE=true
 ARG CLARIUS_MODEL_URL=""
 
 ENV DEBIAN_FRONTEND=noninteractive

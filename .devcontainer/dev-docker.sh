@@ -8,9 +8,12 @@ WORKSPACE_DIR="$(cd -- "${REPO_DIR}/../.." >/dev/null 2>&1 && pwd)"
 IMAGE_NAME="${IMAGE_NAME:-ros2-kortex-dev}"
 CONTAINER_NAME="${CONTAINER_NAME:-ros2-kortex-dev}"
 RUN_CLARIUS_SETUP="${RUN_CLARIUS_SETUP:-true}"
+# The helper bind-mounts the host workspace over the image workspace, so its
+# build products need to be created on the host instead of duplicated here.
 BUILD_WORKSPACE_IN_IMAGE="${BUILD_WORKSPACE_IN_IMAGE:-false}"
 CLARIUS_MODEL_URL="${CLARIUS_MODEL_URL:-}"
 HOST_SSH_KEY="${HOST_SSH_KEY:-}"
+BUILD_PACKAGES="${BUILD_PACKAGES:-}"
 BUILD_IMAGE=1
 INITIALIZE_WORKSPACE=1
 
@@ -25,6 +28,8 @@ Options:
   --no-init        Do not import repos or create .venv in the mounted workspace.
   --image NAME     Docker image name. Default: ${IMAGE_NAME}
   --name NAME      Docker container name. Default: ${CONTAINER_NAME}
+  --build-packages "PKG ..."
+                   Build these packages in the mounted workspace on startup
   -h, --help       Show this help.
 
 Environment:
@@ -33,12 +38,14 @@ Environment:
                                 Build the copied workspace into the image. Default: false
   CLARIUS_MODEL_URL=URL          Optional deeplabv3.pth download URL
   HOST_SSH_KEY=PATH              Private key used when no SSH agent is running
+  BUILD_PACKAGES="PKG ..."       Packages to build on startup. Default: empty
   LOCAL_UID=1000                User id inside image. Default: current uid
   LOCAL_GID=1000                Group id inside image. Default: current gid
 
 Examples:
   scripts/dev-docker.sh
   scripts/dev-docker.sh --no-build
+  scripts/dev-docker.sh --build-packages "clarius_ros kortex_bringup"
   scripts/dev-docker.sh --no-build -- colcon build --symlink-install
 EOF
 }
@@ -59,6 +66,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --name)
       CONTAINER_NAME="$2"
+      shift 2
+      ;;
+    --build-packages)
+      BUILD_PACKAGES="$2"
       shift 2
       ;;
     -h|--help)
@@ -137,6 +148,7 @@ DOCKER_ARGS=(
   -e "ROS_DISTRO=humble"
   -e "RMW_IMPLEMENTATION=rmw_fastrtps_cpp"
   -e "VIRTUAL_ENV=/workspace/ros2_kortex_ws/.venv"
+  -e "BUILD_PACKAGES=${BUILD_PACKAGES}"
   -e "LIBGL_ALWAYS_SOFTWARE=1"
   -e "XDG_RUNTIME_DIR=/tmp/runtime-vscode"
   -v "${WORKSPACE_DIR}:/workspace/ros2_kortex_ws:cached"
@@ -184,6 +196,13 @@ fi
 source /workspace/ros2_kortex_ws/.venv/bin/activate
 vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.humble.repos
 vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.humble.repos
+if [ -n "${BUILD_PACKAGES}" ]; then
+  read -r -a selected_packages <<< "${BUILD_PACKAGES}"
+  colcon build --packages-select "${selected_packages[@]}" --symlink-install
+fi
+if [ -f /workspace/ros2_kortex_ws/install/setup.bash ]; then
+  source /workspace/ros2_kortex_ws/install/setup.bash
+fi
 '
 else
   INIT_CMD='
@@ -191,6 +210,9 @@ set -e
 source /opt/ros/humble/setup.bash
 if [ -f /workspace/ros2_kortex_ws/.venv/bin/activate ]; then
   source /workspace/ros2_kortex_ws/.venv/bin/activate
+fi
+if [ -f /workspace/ros2_kortex_ws/install/setup.bash ]; then
+  source /workspace/ros2_kortex_ws/install/setup.bash
 fi
 '
 fi
