@@ -196,9 +196,16 @@ fi
 source /workspace/ros2_kortex_ws/.venv/bin/activate
 vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.humble.repos
 vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.humble.repos
+vcs import src --skip-existing --input src/clarius_interface/dependencies.repos
+sudo apt-get update
+sudo rosdep init 2>/dev/null || true
+rosdep update --rosdistro humble
+rosdep install --ignore-src --from-paths \
+  src/clarius_interface src/apriltag src/apriltag_msgs \
+  src/apriltag_ros src/realsense-ros -y -r
 if [ -n "${BUILD_PACKAGES}" ]; then
   read -r -a selected_packages <<< "${BUILD_PACKAGES}"
-  colcon build --packages-select "${selected_packages[@]}" --symlink-install
+  colcon build --packages-up-to "${selected_packages[@]}" --symlink-install
 fi
 if [ -f /workspace/ros2_kortex_ws/install/setup.bash ]; then
   source /workspace/ros2_kortex_ws/install/setup.bash

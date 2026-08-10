@@ -107,6 +107,9 @@ RUN --mount=type=ssh --mount=type=cache,target=/root/.cache/pip \
     . /opt/ros/${ROS_DISTRO}/setup.sh \
     && vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.${ROS_DISTRO}.repos \
     && vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.${ROS_DISTRO}.repos \
+    && if [ -f src/clarius_interface/dependencies.repos ]; then \
+      vcs import src --skip-existing --input src/clarius_interface/dependencies.repos; \
+    fi \
     && git -C src/clarius_interface lfs pull \
     && git -C src/multilabel_segmentation lfs pull \
     && sed '/^[[:space:]]*colcon-common-extensions[[:space:]]*$/d' \
