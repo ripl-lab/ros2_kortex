@@ -8,6 +8,7 @@ Panels:
         - /Applied Wrench1
         - /Raw Ultrasound1
         - /Segmentation1
+        - /RealSense Color1
       Splitter Ratio: 0.5
     Tree Height: 84
   - Class: rviz_common/Views
@@ -171,7 +172,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /clarius/processed_image
+        Value: /clarius/image_raw
       Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
@@ -185,7 +186,21 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /prediction
+        Value: /segmentation_image
+      Value: true
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: RealSense Color
+      Normalize Range: true
+      Topic:
+        Depth: 1
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /camera/camera/color/image_raw
       Value: true
   Enabled: true
   Global Options:
