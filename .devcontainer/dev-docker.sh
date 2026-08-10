@@ -165,6 +165,10 @@ if [[ -d /tmp/.X11-unix ]]; then
   DOCKER_ARGS+=(-v "/tmp/.X11-unix:/tmp/.X11-unix")
 fi
 
+if [[ -S /run/dbus/system_bus_socket ]]; then
+  DOCKER_ARGS+=(-v "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket")
+fi
+
 # Forward the active X11 authorization cookie (including GNOME Wayland/Xwayland
 # sessions) so GUI applications such as RViz can connect to the host display.
 HOST_XAUTHORITY="${XAUTHORITY:-${HOME}/.Xauthority}"

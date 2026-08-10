@@ -50,6 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb-render-util0 \
     libxcb-xkb1 \
     less \
+    network-manager \
     openssh-client \
     python3-argcomplete \
     python3-colcon-common-extensions \
