@@ -153,6 +153,7 @@ DOCKER_ARGS=(
   -e "XDG_RUNTIME_DIR=/tmp/runtime-vscode"
   -v "${WORKSPACE_DIR}:/workspace/ros2_kortex_ws:cached"
   -w "/workspace/ros2_kortex_ws"
+  -v "/dev:/dev"
 )
 
 if [[ -t 0 && -t 1 ]]; then

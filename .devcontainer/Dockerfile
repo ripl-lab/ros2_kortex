@@ -62,8 +62,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-ackermann-msgs \
     ros-humble-control-toolbox \
     ros-humble-cv-bridge \
+    ros-humble-diagnostic-updater \
     ros-humble-example-interfaces \
     ros-humble-generate-parameter-library \
+    ros-humble-librealsense2 \
     ros-humble-moveit \
     ros-humble-pcl-conversions \
     ros-humble-pcl-ros \
