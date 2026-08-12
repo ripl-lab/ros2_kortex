@@ -30,6 +30,7 @@ def generate_launch_description():
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    constrain_eef_orientation = LaunchConfiguration("constrain_eef_orientation")
     admittance_mode = LaunchConfiguration("admittance_mode")
     admittance_damping = LaunchConfiguration("admittance_damping")
     admittance_stiffness = LaunchConfiguration("admittance_stiffness")
@@ -111,6 +112,7 @@ def generate_launch_description():
             "payload_cog_z": payload_cog_z,
             "payload_weight": controller_payload_weight,
             "force_test_response": force_test_response,
+            "constrain_eef_orientation": constrain_eef_orientation,
             "admittance_mode": admittance_mode,
             "admittance_damping": admittance_damping,
             "admittance_stiffness": admittance_stiffness,
@@ -327,7 +329,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "move_and_stay_torque_deadband", default_value="0.60, 0.60, 0.85"
             ),
-            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.02"),
+            DeclareLaunchArgument("move_and_stay_settle_time", default_value="0.1"),
             DeclareLaunchArgument(
                 "initial_positions_file",
                 default_value=PathJoinSubstitution(

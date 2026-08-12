@@ -119,6 +119,7 @@ def launch_setup(context, *args, **kwargs):
     payload_cog_z = LaunchConfiguration("payload_cog_z")
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
+    constrain_eef_orientation = LaunchConfiguration("constrain_eef_orientation")
     admittance_mode = LaunchConfiguration("admittance_mode")
     admittance_damping = LaunchConfiguration("admittance_damping")
     admittance_stiffness = LaunchConfiguration("admittance_stiffness")
@@ -260,6 +261,7 @@ def launch_setup(context, *args, **kwargs):
                     "payload_cog_z": payload_cog_z.perform(context),
                     "payload_weight": payload_weight.perform(context),
                     "admittance_frame": admittance_frame,
+                    "constrain_eef_orientation": constrain_eef_orientation.perform(context).lower(),
                     "gripper_joint_name": gripper_joint_name.perform(context),
                     "admittance_damping": effective_damping,
                     "admittance_stiffness": effective_stiffness,
@@ -536,6 +538,13 @@ def generate_launch_description():
                 "admittance_mode",
                 default_value="move_and_stay",
                 description="Admittance behavior: 'move_and_stay' or 'spring'.",
+            ),
+            DeclareLaunchArgument(
+                "constrain_eef_orientation",
+                default_value="false",
+                description=(
+                    "Allow XYZ admittance motion while locking end-effector rotation."
+                ),
             ),
             DeclareLaunchArgument(
                 "admittance_damping",

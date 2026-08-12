@@ -102,13 +102,17 @@ ${prefix}/admittance_controller:
         force: ${payload_weight}
 
     admittance:
+      constrain_eef_orientation: ${constrain_eef_orientation}
       selected_axes:
         - true
         - true
         - true
-        - true
-        - true
-        - true
+        - false
+        - false
+        - false
+        # - true
+        # - true
+        # - true
       # Extremely small inertia only drives the controller into its acceleration
       # and joint-speed limits. This remains light while providing control authority.
       mass: [5.0, 5.0, 5.0, 0.7, 0.7, 0.7]
