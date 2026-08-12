@@ -38,6 +38,7 @@ def generate_launch_description():
     move_and_stay_force_deadband = LaunchConfiguration("move_and_stay_force_deadband")
     move_and_stay_torque_deadband = LaunchConfiguration("move_and_stay_torque_deadband")
     move_and_stay_settle_time = LaunchConfiguration("move_and_stay_settle_time")
+    auto_move_activation_pose = LaunchConfiguration("auto_move_activation_pose")
     include_clarius = LaunchConfiguration("include_clarius")
     initial_positions_file = LaunchConfiguration("initial_positions_file")
     feedback_timeout = LaunchConfiguration("feedback_timeout")
@@ -152,6 +153,22 @@ def generate_launch_description():
         condition=IfCondition(visualize_wrench),
     )
 
+    activation_pose_service = Node(
+        package="kortex_bringup",
+        executable="activation_pose_service.py",
+        name="activation_pose_service",
+        output="screen",
+        parameters=[
+            {
+                "auto_move": ParameterValue(auto_move_activation_pose, value_type=bool),
+                "restore_controller": primary_controller,
+                "restore_state_only_admittance": ParameterValue(
+                    measurement_only, value_type=bool
+                ),
+            }
+        ],
+    )
+
     measurement_estimator_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -172,6 +189,18 @@ def generate_launch_description():
             DeclareLaunchArgument("fake_sensor_commands", default_value="true"),
             DeclareLaunchArgument("launch_rviz", default_value="true"),
             DeclareLaunchArgument("visualize_wrench", default_value="true"),
+            DeclareLaunchArgument(
+                "auto_move_activation_pose",
+                default_value="true",
+                description="Move to the configured activation pose once at launch.",
+            ),
+            DeclareLaunchArgument(
+                "constrain_eef_orientation",
+                default_value="false",
+                description=(
+                    "Allow XYZ admittance motion while locking end-effector rotation."
+                ),
+            ),
             DeclareLaunchArgument(
                 "visualization_force_threshold",
                 default_value="5.0",
@@ -315,6 +344,7 @@ def generate_launch_description():
             ),
             gen3_launch,
             measurement_estimator_spawner,
+            activation_pose_service,
             wrench_stamped_publisher,
         ]
     )

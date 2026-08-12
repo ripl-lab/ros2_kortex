@@ -41,6 +41,9 @@ ${prefix}/joint_trajectory_controller:
     state_publish_rate: 100.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
+    # Hold measured joint positions during controller handoff instead of
+    # inheriting potentially stale shared position-command values.
+    set_last_command_interface_value_as_state_on_activation: false
 
 ${prefix}/tool_wrench_broadcaster:
   ros__parameters:

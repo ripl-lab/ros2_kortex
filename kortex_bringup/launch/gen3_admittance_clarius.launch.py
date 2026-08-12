@@ -14,7 +14,9 @@ def generate_launch_description():
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
     force_test_response = LaunchConfiguration("force_test_response")
+    constrain_eef_orientation = LaunchConfiguration("constrain_eef_orientation")
     admittance_mode = LaunchConfiguration("admittance_mode")
+    auto_move_activation_pose = LaunchConfiguration("auto_move_activation_pose")
     vision = LaunchConfiguration("vision")
     launch_rviz = LaunchConfiguration("launch_rviz")
     start_clarius = LaunchConfiguration("start_clarius")
@@ -36,7 +38,9 @@ def generate_launch_description():
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
             "force_test_response": force_test_response,
+            "constrain_eef_orientation": constrain_eef_orientation,
             "admittance_mode": admittance_mode,
+            "auto_move_activation_pose": auto_move_activation_pose,
             "vision": vision,
             "include_clarius": "true",
             "gripper": "",
@@ -100,7 +104,19 @@ def generate_launch_description():
             DeclareLaunchArgument("use_fake_hardware", default_value="false"),
             DeclareLaunchArgument("fake_sensor_commands", default_value="true"),
             DeclareLaunchArgument("force_test_response", default_value="false"),
+            DeclareLaunchArgument(
+                "constrain_eef_orientation",
+                default_value="false",
+                description=(
+                    "Allow XYZ admittance motion while locking the Clarius tip orientation."
+                ),
+            ),
             DeclareLaunchArgument("admittance_mode", default_value="move_and_stay"),
+            DeclareLaunchArgument(
+                "auto_move_activation_pose",
+                default_value="true",
+                description="Move to the activation pose once at launch.",
+            ),
             DeclareLaunchArgument("vision", default_value="true"),
             DeclareLaunchArgument("launch_rviz", default_value="true"),
             DeclareLaunchArgument(
