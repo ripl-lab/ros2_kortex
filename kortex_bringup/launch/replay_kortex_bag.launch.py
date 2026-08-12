@@ -2,7 +2,7 @@ import os
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction, TimerAction
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -29,10 +29,6 @@ def _make_bag_player(context):
         "2.0",
         "--start-offset",
         LaunchConfiguration("start_offset").perform(context),
-        "--topics",
-        "/tf",
-        "/tf_static",
-        "/clarius/processed_image",
     ]
     if _as_bool(LaunchConfiguration("loop").perform(context)):
         command.append("--loop")
@@ -43,36 +39,6 @@ def _make_bag_player(context):
 
 
 def generate_launch_description():
-    robot_description_content = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            " ",
-            PathJoinSubstitution(
-                [FindPackageShare("kortex_description"), "robots", "kinova.urdf.xacro"]
-            ),
-            " robot_ip:=xxx.yyy.zzz.www",
-            " name:=kinova",
-            " arm:=gen3",
-            " dof:=",
-            LaunchConfiguration("dof"),
-            " gripper:=",
-            LaunchConfiguration("gripper"),
-            " vision:=",
-            LaunchConfiguration("vision"),
-        ]
-    )
-
-    robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        output="screen",
-        parameters=[
-            {"robot_description": robot_description_content},
-            {"use_sim_time": True},
-        ],
-        remappings=[("/joint_states", "/joint_states_not_used_for_replay")],
-    )
-
     rviz = Node(
         package="rviz2",
         executable="rviz2",
@@ -81,7 +47,11 @@ def generate_launch_description():
         arguments=[
             "-d",
             PathJoinSubstitution(
-                [FindPackageShare("kortex_bringup"), "config", "kortex_bag_replay.rviz"]
+                [
+                    FindPackageShare("kortex_bringup"),
+                    "config",
+                    "gen3_admittance_clarius.rviz",
+                ]
             ),
         ],
         parameters=[{"use_sim_time": True}],
@@ -93,13 +63,6 @@ def generate_launch_description():
                 "bag",
                 description="Path to a rosbag directory or metadata.yaml file.",
             ),
-            DeclareLaunchArgument("dof", default_value="7", choices=["6", "7"]),
-            DeclareLaunchArgument(
-                "gripper",
-                default_value="",
-                choices=["", "robotiq_2f_85", "robotiq_2f_140"],
-            ),
-            DeclareLaunchArgument("vision", default_value="false"),
             DeclareLaunchArgument("rate", default_value="1.0"),
             DeclareLaunchArgument(
                 "start_offset",
@@ -108,7 +71,6 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument("loop", default_value="false"),
             DeclareLaunchArgument("start_paused", default_value="false"),
-            robot_state_publisher,
             rviz,
             TimerAction(period=0.5, actions=[OpaqueFunction(function=_make_bag_player)]),
         ]
