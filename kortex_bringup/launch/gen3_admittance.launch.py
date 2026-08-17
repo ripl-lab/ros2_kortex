@@ -311,7 +311,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "admittance_damping",
-                default_value="80.0, 80.0, 80.0, 20.0, 20.0, 20.0",
+                default_value="80.0, 80.0, 160.0, 20.0, 20.0, 20.0",
                 description="Explicit Cartesian damping used by move-and-stay mode.",
             ),
             DeclareLaunchArgument(

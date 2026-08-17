@@ -135,7 +135,10 @@ ${prefix}/admittance_controller:
         torque_deadband: [${move_and_stay_torque_deadband}]
         settle_time: ${move_and_stay_settle_time}
         restart_time: 0.10
-        restart_threshold_scale: 2.0
+        # Ignore ordinary gel reaction in base +Z. A deliberate upward pull
+        # must cross 15 N; hysteresis keeps it enabled until it falls below 10 N.
+        upward_force_start_threshold: 15.0
+        upward_force_stop_threshold: 10.0
       max_tracking_error: 0.05
       max_cartesian_acceleration: 0.4
       max_joint_acceleration: 0.3
