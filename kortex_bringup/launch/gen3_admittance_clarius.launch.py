@@ -15,6 +15,7 @@ def generate_launch_description():
     fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
     force_test_response = LaunchConfiguration("force_test_response")
     constrain_eef_orientation = LaunchConfiguration("constrain_eef_orientation")
+    constrain_eef_z_motion = LaunchConfiguration("constrain_eef_z_motion")
     admittance_mode = LaunchConfiguration("admittance_mode")
     auto_move_activation_pose = LaunchConfiguration("auto_move_activation_pose")
     vision = LaunchConfiguration("vision")
@@ -39,6 +40,7 @@ def generate_launch_description():
             "fake_sensor_commands": fake_sensor_commands,
             "force_test_response": force_test_response,
             "constrain_eef_orientation": constrain_eef_orientation,
+            "constrain_eef_z_motion": constrain_eef_z_motion,
             "admittance_mode": admittance_mode,
             "auto_move_activation_pose": auto_move_activation_pose,
             "vision": vision,
@@ -110,6 +112,11 @@ def generate_launch_description():
                 description=(
                     "Allow XYZ admittance motion while locking the Clarius tip orientation."
                 ),
+            ),
+            DeclareLaunchArgument(
+                "constrain_eef_z_motion",
+                default_value="false",
+                description="Lock base-frame Z translation while retaining X/Y admittance motion.",
             ),
             DeclareLaunchArgument("admittance_mode", default_value="move_and_stay"),
             DeclareLaunchArgument(

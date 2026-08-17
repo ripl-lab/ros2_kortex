@@ -31,6 +31,7 @@ def generate_launch_description():
     payload_weight = LaunchConfiguration("payload_weight")
     force_test_response = LaunchConfiguration("force_test_response")
     constrain_eef_orientation = LaunchConfiguration("constrain_eef_orientation")
+    constrain_eef_z_motion = LaunchConfiguration("constrain_eef_z_motion")
     admittance_mode = LaunchConfiguration("admittance_mode")
     admittance_damping = LaunchConfiguration("admittance_damping")
     admittance_stiffness = LaunchConfiguration("admittance_stiffness")
@@ -113,6 +114,7 @@ def generate_launch_description():
             "payload_weight": controller_payload_weight,
             "force_test_response": force_test_response,
             "constrain_eef_orientation": constrain_eef_orientation,
+            "constrain_eef_z_motion": constrain_eef_z_motion,
             "admittance_mode": admittance_mode,
             "admittance_damping": admittance_damping,
             "admittance_stiffness": admittance_stiffness,
@@ -202,6 +204,11 @@ def generate_launch_description():
                 description=(
                     "Allow XYZ admittance motion while locking end-effector rotation."
                 ),
+            ),
+            DeclareLaunchArgument(
+                "constrain_eef_z_motion",
+                default_value="false",
+                description="Lock base-frame Z translation while retaining X/Y admittance motion.",
             ),
             DeclareLaunchArgument(
                 "visualization_force_threshold",

@@ -149,6 +149,11 @@ def generate_launch_description():
                 ),
             ),
             DeclareLaunchArgument(
+                "constrain_eef_z_motion",
+                default_value="false",
+                description="Lock base-frame Z translation while retaining X/Y admittance motion.",
+            ),
+            DeclareLaunchArgument(
                 "admittance_damping",
                 default_value="80.0, 80.0, 80.0, 15.0, 15.0, 15.0",
                 description="Explicit Cartesian damping used by move-and-stay mode.",
@@ -297,6 +302,7 @@ def generate_launch_description():
     launch_rviz = LaunchConfiguration("launch_rviz")
     controllers_file = LaunchConfiguration("controllers_file")
     constrain_eef_orientation = LaunchConfiguration("constrain_eef_orientation")
+    constrain_eef_z_motion = LaunchConfiguration("constrain_eef_z_motion")
 
     base_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([ThisLaunchFileDir(), "/kortex_control.launch.py"]),
@@ -318,6 +324,7 @@ def generate_launch_description():
             "payload_weight": payload_weight,
             "force_test_response": force_test_response,
             "constrain_eef_orientation": constrain_eef_orientation,
+            "constrain_eef_z_motion": constrain_eef_z_motion,
             "admittance_mode": admittance_mode,
             "admittance_damping": admittance_damping,
             "admittance_stiffness": admittance_stiffness,
