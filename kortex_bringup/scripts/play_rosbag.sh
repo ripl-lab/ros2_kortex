@@ -2,7 +2,10 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-bag_path="${script_dir}/rosbag2_2026_08_11-20_40_26"
+bag_path="${1:-${script_dir}/rosbag2_2026_08_11-20_40_26}"
+if [[ $# -gt 0 ]]; then
+  shift
+fi
 
 if [[ ! -f "${bag_path}/metadata.yaml" ]]; then
   echo "Rosbag not found: ${bag_path}" >&2

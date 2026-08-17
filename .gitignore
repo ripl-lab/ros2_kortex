@@ -5,3 +5,4 @@ __pycache__/
 log/
 build/
 install/
+kortex_bringup/scripts/rosbag2_*/
