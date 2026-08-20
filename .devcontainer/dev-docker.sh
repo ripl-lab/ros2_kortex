@@ -14,6 +14,7 @@ BUILD_WORKSPACE_IN_IMAGE="${BUILD_WORKSPACE_IN_IMAGE:-false}"
 CLARIUS_MODEL_URL="${CLARIUS_MODEL_URL:-}"
 HOST_SSH_KEY="${HOST_SSH_KEY:-}"
 BUILD_PACKAGES="${BUILD_PACKAGES:-}"
+GPU_MODE="${GPU_MODE:-auto}"
 BUILD_IMAGE=1
 INITIALIZE_WORKSPACE=1
 
@@ -30,6 +31,8 @@ Options:
   --name NAME      Docker container name. Default: ${CONTAINER_NAME}
   --build-packages "PKG ..."
                    Build these packages in the mounted workspace on startup
+  --gpu            Require NVIDIA GPU access in the container
+  --no-gpu         Disable NVIDIA GPU access
   -h, --help       Show this help.
 
 Environment:
@@ -39,6 +42,7 @@ Environment:
   CLARIUS_MODEL_URL=URL          Optional deeplabv3.pth download URL
   HOST_SSH_KEY=PATH              Private key used when no SSH agent is running
   BUILD_PACKAGES="PKG ..."       Packages to build on startup. Default: empty
+  GPU_MODE=auto|true|false       GPU policy. Default: auto
   LOCAL_UID=1000                User id inside image. Default: current uid
   LOCAL_GID=1000                Group id inside image. Default: current gid
 
@@ -71,6 +75,14 @@ while [[ $# -gt 0 ]]; do
     --build-packages)
       BUILD_PACKAGES="$2"
       shift 2
+      ;;
+    --gpu)
+      GPU_MODE=true
+      shift
+      ;;
+    --no-gpu)
+      GPU_MODE=false
+      shift
       ;;
     -h|--help)
       usage
@@ -149,12 +161,44 @@ DOCKER_ARGS=(
   -e "RMW_IMPLEMENTATION=rmw_fastrtps_cpp"
   -e "VIRTUAL_ENV=/workspace/ros2_kortex_ws/.venv"
   -e "BUILD_PACKAGES=${BUILD_PACKAGES}"
-  -e "LIBGL_ALWAYS_SOFTWARE=1"
   -e "XDG_RUNTIME_DIR=/tmp/runtime-vscode"
   -v "${WORKSPACE_DIR}:/workspace/ros2_kortex_ws:cached"
   -w "/workspace/ros2_kortex_ws"
   -v "/dev:/dev"
 )
+
+case "${GPU_MODE}" in
+  auto|true|false) ;;
+  *)
+    echo "GPU_MODE must be auto, true, or false; got: ${GPU_MODE}" >&2
+    exit 1
+    ;;
+esac
+
+GPU_AVAILABLE=false
+if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+  if docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q 'nvidia'; then
+    GPU_AVAILABLE=true
+  fi
+fi
+
+if [[ "${GPU_MODE}" == "true" && "${GPU_AVAILABLE}" != "true" ]]; then
+  echo "NVIDIA GPU access was requested but is unavailable." >&2
+  echo "Install/load the NVIDIA host driver and NVIDIA Container Toolkit, then restart Docker." >&2
+  exit 1
+fi
+
+if [[ "${GPU_MODE}" == "true" || ("${GPU_MODE}" == "auto" && "${GPU_AVAILABLE}" == "true") ]]; then
+  echo "Enabling NVIDIA GPU access for ${CONTAINER_NAME}"
+  DOCKER_ARGS+=(
+    --gpus all
+    -e "NVIDIA_VISIBLE_DEVICES=all"
+    -e "NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics"
+  )
+else
+  echo "NVIDIA GPU unavailable or disabled; using CPU/software rendering"
+  DOCKER_ARGS+=(-e "LIBGL_ALWAYS_SOFTWARE=1")
+fi
 
 if [[ -t 0 && -t 1 ]]; then
   DOCKER_ARGS+=(-it)
