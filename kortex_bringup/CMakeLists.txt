@@ -16,6 +16,7 @@ install(PROGRAMS
   scripts/demo_mujoco_pose.sh
   scripts/demo_mujoco_forces.sh
   scripts/joint_torque_wrenches.py
+  scripts/save_pointcloud_ply.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
