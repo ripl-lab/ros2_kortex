@@ -2,6 +2,7 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+workspace_dir="$(cd -- "${script_dir}/../../../.." && pwd)"
 bag_path="${1:-${script_dir}/rosbag2_2026_08_11-20_40_26}"
 if [[ $# -gt 0 ]]; then
   shift
@@ -19,10 +20,9 @@ if [[ -f /opt/ros/humble/setup.bash ]]; then
   set -u
 fi
 
-if [[ -f "${script_dir}/install/setup.bash" &&
-      -f "${script_dir}/install/kortex_bringup/share/kortex_bringup/local_setup.bash" ]]; then
+if [[ -f "${workspace_dir}/install/setup.bash" ]]; then
   set +u
-  source "${script_dir}/install/setup.bash"
+  source "${workspace_dir}/install/setup.bash"
   set -u
 fi
 
