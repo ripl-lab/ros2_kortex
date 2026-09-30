@@ -13,6 +13,7 @@ from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -160,6 +161,19 @@ def generate_launch_description():
                 # Keep the generated overlay separate from the copy recorded in
                 # the bag while regenerating /prediction_pointcloud.
                 "prediction_topic": "/replay/segmentation_image",
+                "sx_m_per_pixel": ParameterValue(
+                    LaunchConfiguration("sx_m_per_pixel"), value_type=float
+                ),
+                "sz_m_per_pixel": ParameterValue(
+                    LaunchConfiguration("sz_m_per_pixel"), value_type=float
+                ),
+                "accumulate_pointcloud": ParameterValue(
+                    LaunchConfiguration("accumulate_pointcloud"), value_type=bool
+                ),
+                # Recorded image headers can use device-relative time while
+                # replayed TF uses the bag clock. Use simulation time so RViz
+                # can transform a non-accumulated slice into base_link.
+                "pointcloud_use_node_time": True,
             },
         ],
     )
@@ -182,6 +196,27 @@ def generate_launch_description():
                 description=(
                     "Wall-time seconds to play robot motion before starting raw "
                     "ultrasound. Zero preserves synchronized replay."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "sx_m_per_pixel",
+                default_value="0.0005",
+                description="Ultrasound pixel spacing along the slice X axis, in metres.",
+            ),
+            DeclareLaunchArgument(
+                "sz_m_per_pixel",
+                default_value="0.0005",
+                description=(
+                    "Ultrasound pixel spacing along the slice depth (Z) axis, "
+                    "in metres."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "accumulate_pointcloud",
+                default_value="true",
+                description=(
+                    "Accumulate slices in the world frame when true; publish each "
+                    "individual slice in clarius_sensor_frame when false."
                 ),
             ),
             DeclareLaunchArgument(

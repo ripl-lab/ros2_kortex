@@ -391,10 +391,15 @@ No real robot, Clarius probe, or RealSense camera is required for replay.
 	src/ros2_kortex/kortex_bringup/scripts/play_rosbag.sh \
 		bags/scan_YYYYMMDD_HHMMSS \
 		ultrasound_delay:=0.0 \
-		start_segmentation:=true
+		start_segmentation:=true \
+		accumulate_pointcloud:=true \
+		sx_m_per_pixel:=0.0005 \
+		sz_m_per_pixel:=0.0005
 	```
 
    This opens RViz, publishes the bag clock, replays the robot state and raw ultrasound, runs segmentation, and regenerates the accumulated `/prediction_pointcloud`.
+
+   Set `accumulate_pointcloud:=false` to publish the current segmented slice without retaining earlier slices. A slice lies in the probe's X-Z plane, so `sx_m_per_pixel` controls its lateral scale and `sz_m_per_pixel` controls its depth scale; its Y coordinate is zero. During replay, slices use the bag clock so RViz can transform them from `clarius_sensor_frame` into `base_link` even when the recorded image headers use device-relative time.
 
 2. Keep `ultrasound_delay:=0.0` for reconstruction so the original recorded timing is preserved. A positive value intentionally starts ultrasound later and should only be used for timing diagnostics.
 
