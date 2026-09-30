@@ -161,7 +161,7 @@ DOCKER_ARGS=(
   -e "RMW_IMPLEMENTATION=rmw_fastrtps_cpp"
   -e "VIRTUAL_ENV=/workspace/ros2_kortex_ws/.venv"
   -e "BUILD_PACKAGES=${BUILD_PACKAGES}"
-  -e "XDG_RUNTIME_DIR=/tmp/runtime-vscode"
+  -e "XDG_RUNTIME_DIR=/tmp/runtime-clarius"
   -v "${WORKSPACE_DIR}:/workspace/ros2_kortex_ws:cached"
   -w "/workspace/ros2_kortex_ws"
   -v "/dev:/dev"
@@ -225,7 +225,16 @@ if [[ -f "${HOST_XAUTHORITY}" ]]; then
 fi
 
 if [[ -d "${HOME}/.ssh" ]]; then
-  DOCKER_ARGS+=(-v "${HOME}/.ssh:/home/vscode/.ssh:ro")
+  DOCKER_ARGS+=(-v "${HOME}/.ssh:/home/clarius/.ssh:ro")
+fi
+
+# Forward the host SSH agent at runtime as well as during BuildKit builds. This
+# supports passphrase-protected keys and keys that exist only in the agent.
+if [[ -n "${SSH_AUTH_SOCK:-}" && -S "${SSH_AUTH_SOCK}" ]]; then
+  DOCKER_ARGS+=(
+    -e "SSH_AUTH_SOCK=/tmp/host-ssh-agent.sock"
+    -v "${SSH_AUTH_SOCK}:/tmp/host-ssh-agent.sock"
+  )
 fi
 
 if [[ $# -gt 0 ]]; then

@@ -2,7 +2,7 @@
 
 FROM ros:humble-ros-base-jammy
 
-ARG USERNAME=vscode
+ARG USERNAME=clarius
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 ARG RUN_CLARIUS_SETUP=true
@@ -135,10 +135,10 @@ RUN --mount=type=ssh --mount=type=cache,target=/root/.cache/pip \
     && apt-get update \
     && rosdep install --ignore-src --from-paths src -y -r \
     && if [ "${BUILD_WORKSPACE_IN_IMAGE}" = "true" ]; then \
-      /usr/bin/colcon build --cmake-args \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
-        --executor sequential \
+        /usr/bin/colcon build --cmake-args \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
+          --executor sequential \
       && . install/setup.sh \
       && python3 -c "import clarius_ros.clarius_connect; print('pyclariuscast import OK')"; \
     else \

@@ -10,7 +10,7 @@
     }
   },
   "workspaceFolder": "/workspace/ros2_kortex_ws",
-  "remoteUser": "vscode",
+  "remoteUser": "clarius",
   "runArgs": [
     "--network=host",
     "--ipc=host",
@@ -18,7 +18,7 @@
   ],
   "mounts": [
     "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
-    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}/.ssh,target=/home/clarius/.ssh,type=bind,readonly",
     "source=ros2-kortex-ws-venv,target=/workspace/ros2_kortex_ws/.venv,type=volume",
     "source=ros2-kortex-ws-install,target=/workspace/ros2_kortex_ws/install,type=volume"
   ],
@@ -30,7 +30,7 @@
     "RMW_IMPLEMENTATION": "rmw_fastrtps_cpp",
     "VIRTUAL_ENV": "/workspace/ros2_kortex_ws/.venv",
     "LIBGL_ALWAYS_SOFTWARE": "1",
-    "XDG_RUNTIME_DIR": "/tmp/runtime-vscode"
+    "XDG_RUNTIME_DIR": "/tmp/runtime-clarius"
   },
   "customizations": {
     "vscode": {
