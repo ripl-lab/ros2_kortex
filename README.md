@@ -70,493 +70,449 @@ ROS2 KINOVA KORTEX™ is the official ROS2 package to interact with KINOVA KORTE
 
 ---
 
-## Docker development environment
+## Usage
 
-The Docker setup targets ROS 2 Humble on Ubuntu 22.04. Install Docker Engine and make sure your
-user can run `docker` before continuing. The repository must be located at
-`<workspace>/src/ros2_kortex`; the helper script mounts the complete workspace into the container.
+### Hardware Setup
 
-### Build the workspace in Docker
+#### Kinova Gen 3
 
-From the `ros2_kortex` repository directory, run:
+1. Connect the power cable to the robot and an Ethernet cable to your laptop
+2. Replace the Robotiq gripper with Clarius scanner by removing the 4 screws
+3. Power up the robot by holding the power button until seeing the green light
+4. Wait for around 30 second, then open [Kinova Web Interface](http://192.168.1.10/)
+5. Ensure the surround environment for robot is clean and empty
+6. In the web interface, run zero pose from the action on the bottom
 
-```bash
-./.devcontainer/dev-docker.sh -- \
-  colcon build --cmake-args \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
-    --executor sequential
+  ![Run the Kinova zero-pose action](doc/resources/kinova-zero-pose-action.png)
+
+7. Go to robot and set the torque on each joint to be zero
+
+  ![Open the Kinova robot configuration menu](doc/resources/kinova-robot-configuration-menu.png)
+
+  ![Set each Kinova actuator torque offset to zero](doc/resources/kinova-zero-torque-offset.png)
+
+8. Run retract pose from the action on the bottom
+
+  ![Run the Kinova retract pose action](doc/resources/kinova-retract-pose-action.png)
+
+#### Clarius
+
+1. Unlock the tablet using `WESTL25!`
+2. Open Clarius app
+3. Turn on Clarius by pressing the power button
+4. Connect Clarius to the tablet
+5. Ensure IMU is turned on
+
+#### Realsense
+
+1. Connect the RealSense camera to the laptop
+
+### Software Setup
+
+#### First Time Used
+
+1. Install Docker Engine following this [instruction](https://docs.docker.com/engine/install/) and ensure the user to run Docker
+
+	```bash
+	sudo usermod -aG docker "$USER"
+	```
+
+2. Configure the host so Clarius Wi-Fi and robot Ethernet work together.
+	- The robot is at `192.168.1.10` over Ethernet and the Clarius probe is at `192.168.1.1` over `DIRECT_CLARIUS`
+	- Because both are on the `192.168.1.0/24` subnet, use a host route for each device
+	- Follow these steps while Ethernet remains connected
+	- Replace the example interface and connection names with the values shown by:
+
+		```bash
+		nmcli -f NAME,TYPE,DEVICE connection show --active
+		ip -br address
+		```
+
+	1. Connect to the Clarius Wi-Fi:
+
+		```bash
+		nmcli connection up DIRECT_CLARIUS
+		```
+
+	2. Add a route for each device to the correct interface:
+
+		```bash
+		sudo ip route replace 192.168.1.1/32 dev wlp0s20f3
+		sudo ip route replace 192.168.1.10/32 dev enx68da73a52630
+		```
+
+	3. Confirm Clarius traffic uses Wi-Fi:
+
+		```bash
+		ip route get 192.168.1.1
+		```
+
+	It should contain:
+
+		```text
+		dev wlp0s20f3
+		```
+
+	4. Confirm robot traffic still uses Ethernet:
+
+	```bash
+	ip route get <ROBOT_IP>
+	```
+
+	It should contain:
+
+	```text
+	dev enx68da73a52630
+	```
+
+	Replace `<ROBOT_IP>` with the robot arm’s actual address.
+
+	5. Once confirmed working, make both routes persistent. Replace `"Wired connection 1"` with the Ethernet connection name reported by `nmcli`:
+
+	```bash
+	sudo nmcli connection modify DIRECT_CLARIUS ipv4.never-default yes
+	sudo nmcli connection modify DIRECT_CLARIUS +ipv4.routes "192.168.1.1/32"
+	sudo nmcli connection modify "Wired connection 1" ipv4.never-default yes
+	sudo nmcli connection modify "Wired connection 1" +ipv4.routes "192.168.1.10/32"
+	sudo nmcli connection up "Wired connection 1"
+	sudo nmcli connection up DIRECT_CLARIUS
+	```
+
+	6. Verify again:
+
+	```bash
+	ip route get 192.168.1.1
+	ip route get <ROBOT_IP>
+	```
+
+	The development container uses host networking, so it inherits these routes. Do not use this setup if the robot itself also has IP address `192.168.1.1`; duplicate addresses cannot be reliably routed this way.
+3. Make sure [SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) has been added to the GitHub and the following repos are being shared
+	- [clarius_interface](https://github.com/westlab-uwo/clarius_interface)
+	- [clarius_description](https://github.com/ripl-lab/clarius_description)
+	- [multi-label_segmentation](https://github.com/westlab-uwo/multi-label_segmentation)
+4. Run the following command to clone the repo
+
+	```bash
+	mkdir -p ~/workspace/clarius_ws/src
+	cd ~/workspace/clarius_ws/src
+	git clone git@github.com:ripl-lab/ros2_kortex.git
+	```
+
+The host workspace is named `clarius_ws`; the Docker helper mounts it at the fixed internal path `/workspace/ros2_kortex_ws`, so commands run inside the container continue to use that internal path.
+
+#### Build and Run
+
+1. Build and enter the container. The first build may take approximately 10 minutes.
+
+	```bash
+	cd ~/workspace/clarius_ws/src/ros2_kortex
+	./.devcontainer/dev-docker.sh -- \
+    colcon build --cmake-args \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
+      --executor sequential
+	```
+
+	To skip rebuilding and initializing an existing environment:
+
+	```bash
+	./.devcontainer/dev-docker.sh --no-build --no-init
+	```
+
+2. Inside the Docker container, you should see a prompt similar to:
+
+	```bash
+	(.venv) clarius@user-Yoga-Pro-9-16IMH9:/workspace/ros2_kortex_ws$
+	```
+
+3. Launch the Kinova Gen3, Clarius interface, RealSense camera, AprilTag tracking, admittance controller, and RViz:
+
+	```bash
+	ros2 launch kortex_bringup gen3_admittance_clarius.launch.py \
+		robot_ip:=192.168.1.10 \
+		force_test_response:=true \
+		start_clarius:=true \
+		start_apriltag_tracking:=true \
+		launch_realsense:=true \
+		vision:=true \
+		launch_rviz:=true \
+		auto_move_activation_pose:=true \
+		constrain_eef_orientation:=true
+	```
+
+3. Keep the emergency stop accessible and observe the automatic movement to the activation pose. Confirm that the path and final scanning pose are safe before approaching the robot.
+	- The configured activation pose is: [0, 30, 180, 260, 360, 310, 0] degrees
+		- If the pose is unsuitable:
+		- Stop using the robot emergency stop if immediate motion is unsafe.
+		- Otherwise stop the launch with `Ctrl+C`.
+		- Move the robot to a safe configuration.
+		- Update activation_pose_degrees in: ` src/ros2_kortex/kortex_bringup/scripts/activation_pose_service.py`
+		- Rebuild and source the package:
+
+			```bash
+			colcon build --packages-select kortex_bringup --symlink-install
+			source install/setup.bash
+			```
+
+		- To launch without automatically moving the robot:
+
+			```bash
+			ros2 launch kortex_bringup gen3_admittance_clarius.launch.py \
+				robot_ip:=192.168.1.10 \
+				force_test_response:=true \
+				auto_move_activation_pose:=false
+			```
+
+		- The activation pose can then be requested manually:
+
+			```bash
+			ros2 service call /move_to_activation_pose std_srvs/srv/Trigger "{}"
+			```
+
+4. To open another shell in the already-running container:
+
+	```bash
+	docker exec -it ros2-kortex-dev bash
+	```
+
+#### Expected behaviour
+
+1. Initialize the Kinova Gen3, Clarius interface, RealSense camera, AprilTag tracking, admittance controller, and RViz.
+2. Automatically switch the host Wi-Fi connection to `DIRECT_CLARIUS`.
+3. Read the measured joint positions and move smoothly to the activation scanning pose if needed.
+4. Switch from the joint trajectory controller to the admittance controller after reaching the activation pose.
+5. Capture the activation-pose orientation as the constrained EEF orientation.
+6. Permit force-guided XYZ translation while keeping the scanner orientation fixed.
+7. Stop translational movement after the applied force is released and the latch settles.
+8. Display the robot, estimated wrench, Clarius image, segmentation result, and RealSense image in one RViz session.
+9. When the launch exits normally, attempt to restore the configured Wi-Fi connection.
+
+#### Configurable arguments
+
+- Useful launch arguments include:
+	- `use_fake_hardware:=false`: Use the real robot. Set it to true for testing without a connected robot.
+	- `force_test_response:=true`: Allow the estimated wrench to command admittance motion. When false, wrench estimation remains active but the robot should not respond to it.
+	- `auto_move_activation_pose:=true`: Automatically move to the activation pose during launch.
+	- `constrain_eef_orientation:=true`: Keep the activation-pose orientation while allowing XYZ admittance motion.
+	- `constrain_eef_z_motion:=true`: Lock base-frame Z translation while retaining X/Y admittance motion.
+	- `start_clarius:=true`: Start the Clarius connection and segmentation pipeline.
+	- `start_apriltag_tracking:=true`: Start the RealSense and AprilTag tracking pipeline.
+	- `launch_realsense:=true`: Start the RealSense camera used by AprilTag tracking.
+	- `vision:=true`: Include the Kinova vision configuration.
+	- `launch_rviz:=true`: Open the combined RViz session.
+	- `admittance_mode:=move_and_stay`: Move under applied force, then latch the released position.
+	- `start_clarius:=false` and `start_apriltag_tracking:=false`: Useful for testing only the robot and controller.
+- For a fake-hardware test:
+
+	```bash
+	ros2 launch kortex_bringup gen3_admittance_clarius.launch.py \
+		use_fake_hardware:=true \
+		force_test_response:=true \
+		start_clarius:=false \
+		start_apriltag_tracking:=false \
+		launch_rviz:=true \
+		auto_move_activation_pose:=true \
+		constrain_eef_orientation:=true
+	```
+
+### Collect Data on the Real Robot
+
+1. Start the real-robot master launch and wait until the robot, Clarius, and RealSense streams are stable.
+	- Keep `use_sim_time` disabled for live data.
+
+2. In a second container shell, verify the reconstruction inputs and camera streams:
+
+	```bash
+	ros2 topic hz /joint_states
+	ros2 topic hz /clarius/image_raw
+	ros2 topic hz /camera/camera/color/image_raw
+	ros2 topic echo /estimated_wrench --once
+	ros2 run tf2_ros tf2_echo base_link clarius_sensor_frame
+	```
+
+3. Record the raw ultrasound, robot motion, transforms, wrench, RealSense image, and AprilTag detections:
+
+	```bash
+	cd /workspace/ros2_kortex_ws
+	mkdir -p bags
+
+	ros2 bag record \
+		-o "bags/scan_$(date +%Y%m%d_%H%M%S)" \
+		/robot_description \
+		/joint_states \
+		/tf \
+		/tf_static \
+		/estimated_wrench \
+		/clarius/image_raw \
+		/clarius/imu \
+		/clarius/imu_pose \
+		/camera/camera/color/image_raw \
+		/camera/camera/color/camera_info \
+		/apriltag/detections
+	```
+
+	- `/joint_states`, `/tf`, `/tf_static`, and `/clarius/image_raw` are the source data used to place each ultrasound slice using robot motion.
+	- The segmentation image and `/prediction_pointcloud` are derived outputs, so they are regenerated during replay instead of being required in the recording.
+
+4. Press `Ctrl+C` once in the recording terminal after the scan.
+	- Wait for rosbag2 to finish writing `metadata.yaml` before stopping the master launch or disconnecting hardware.
+
+5. Check the recording:
+
+	```bash
+	ros2 bag info bags/scan_YYYYMMDD_HHMMSS
+	```
+
+
+### Replay a Rosbag and Regenerate the Point Cloud
+
+No real robot, Clarius probe, or RealSense camera is required for replay.
+
+1. Enter the container and run:
+
+	```bash
+	cd /workspace/ros2_kortex_ws
+	src/ros2_kortex/kortex_bringup/scripts/play_rosbag.sh \
+		bags/scan_YYYYMMDD_HHMMSS \
+		ultrasound_delay:=0.0 \
+		start_segmentation:=true
+	```
+
+   This opens RViz, publishes the bag clock, replays the robot state and raw ultrasound, runs segmentation, and regenerates the accumulated `/prediction_pointcloud`.
+
+2. Keep `ultrasound_delay:=0.0` for reconstruction so the original recorded timing is preserved. A positive value intentionally starts ultrasound later and should only be used for timing diagnostics.
+
+3. Optional replay controls include:
+
+	```bash
+	# Prepare the RViz view before playback begins.
+	src/ros2_kortex/kortex_bringup/scripts/play_rosbag.sh BAG_PATH \
+		start_paused:=true
+
+	# Skip the first 5 seconds and replay at half speed.
+	src/ros2_kortex/kortex_bringup/scripts/play_rosbag.sh BAG_PATH \
+		start_offset:=5.0 rate:=0.5
+	```
+
+   With `ultrasound_delay:=0.0`, press the space bar in the rosbag playback terminal to pause or resume the topics. RViz remains interactive while the bag is paused.
+
+### Save the Point Cloud to PLY
+
+1. Start the saver in a separate container shell before replaying the bag:
+
+	```bash
+	cd /workspace/ros2_kortex_ws
+	ros2 run kortex_bringup save_pointcloud_ply.py \
+		/workspace/ros2_kortex_ws/reconstruction.ply
+	```
+
+2. Run the replay command with `start_segmentation:=true` in another shell
+
+3. Wait until playback ends and the final accumulated point cloud appears in RViz.
+
+4. Save the most recently received cloud:
+
+	```bash
+	ros2 service call /save_prediction_ply std_srvs/srv/Trigger "{}"
+	```
+
+   - The response reports the output path and number of points.
+   - Pressing `Ctrl+C` in the saver terminal also saves the latest cloud.
+
+5. If the saver only reports that it is waiting for `/prediction_pointcloud`, check that segmentation is running and the topic is active:
+
+	```bash
+	ros2 topic hz /prediction_pointcloud
+	ros2 topic info /prediction_pointcloud --verbose
+	```
+
+6. Clear the accumulated cloud before starting another live scan or replay:
+
+	```bash
+	ros2 service call /reset_prediction_pointcloud std_srvs/srv/Empty "{}"
+	```
+
+## High-level Flow
+
+```mermaid
+flowchart TB
+    subgraph Hardware
+        direction TB
+        ROBOT@{ img: "doc/resources/kinova-gen3-7dof-robotiq-2f-85.jpg", label: "Kinova Gen3", pos: "b", w: 120, h: 120, constraint: "on" }
+        PROBE["Clarius probe"]
+        CAMERA["RealSense camera"]
+    end
+
+    subgraph Workspace[ROS 2 workspace repositories]
+        direction TD
+        MASTER["ros2_kortex<br/>gen3_admittance_clarius.launch.py"]
+
+        subgraph Robot_Stack[Robot control]
+            direction TD
+            DRIVER["ros2_kortex<br/>Kortex driver and robot TF"]
+            FRAMEWORK["ros2_control<br/>control_msgs<br/>realtime_tools"]
+            ADMIT["ros2_controllers<br/>Admittance controller"]
+            DESCRIPTION["clarius_description<br/>Probe and mount URDF"]
+        end
+
+        subgraph Ultrasound_Stack[Ultrasound reconstruction]
+            direction TD
+            CLARIUS["clarius_interface<br/>Raw ultrasound and IMU"]
+            SEGMENTATION["multi-label_segmentation<br/>Segmentation and reconstruction"]
+        end
+
+        subgraph Tracking_Stack[Optical tracking]
+          direction TD
+            APRILTAG["apriltag<br/>apriltag_msgs<br/>apriltag_ros"]
+        end
+
+        SIM["mujoco_ros2_control + PickNik dependencies<br/>Hardware-free controller testing"]
+    end
+
+    subgraph Outputs
+        direction TD
+        WRENCH["Estimated wrench"]
+        MASK["Segmentation image and mask"]
+        CLOUD["Accumulated /prediction_pointcloud<br/>in base_link"]
+        TRACKING["AprilTag detections and transforms"]
+        RVIZ["Combined RViz session"]
+        PLY["PLY export"]
+    end
+
+    MASTER -.->|launches| DRIVER
+    MASTER -.->|loads| ADMIT
+    MASTER -.->|starts| CLARIUS
+    MASTER -.->|starts| SEGMENTATION
+    MASTER -.->|starts| APRILTAG
+    MASTER -.->|opens| RVIZ
+
+    ROBOT <-->|joint states and commands| DRIVER
+    FRAMEWORK -->|controller interfaces| ADMIT
+    DRIVER -->|joint position and effort| ADMIT
+    ADMIT -->|constrained joint commands| DRIVER
+    DESCRIPTION -->|probe URDF and fixed transforms| DRIVER
+    DRIVER -->|base_link to clarius_sensor_frame TF| SEGMENTATION
+    ADMIT --> WRENCH
+
+    PROBE -->|DIRECT_CLARIUS| CLARIUS
+    CLARIUS -->|/clarius/image_raw| SEGMENTATION
+    SEGMENTATION --> MASK
+    SEGMENTATION --> CLOUD
+
+    CAMERA -->|image and CameraInfo| APRILTAG
+    APRILTAG --> TRACKING
+
+    WRENCH --> RVIZ
+    MASK --> RVIZ
+    CLOUD --> RVIZ
+    TRACKING --> RVIZ
+    CLOUD --> PLY
+
+    SIM -.->|replaces real hardware during testing| FRAMEWORK
 ```
 
-On the first run, this command:
-
-1. Builds the `ros2-kortex-dev` image from `.devcontainer/Dockerfile`.
-2. Imports missing Humble dependencies into the mounted workspace with `vcs`.
-3. Creates the workspace Python virtual environment.
-4. Builds the mounted workspace, so `build`, `install`, and `log` remain on the host.
-
-The initial image build and dependency import can take several minutes. The sequential colcon
-executor avoids excessive memory use.
-
-### Run an interactive container
-
-After the image and workspace have been built, start a shell without rebuilding the image or
-reimporting dependencies:
-
-```bash
-./.devcontainer/dev-docker.sh --no-build --no-init
-```
-
-The container sources ROS 2 Humble, the workspace `install/setup.bash` when present, and the
-workspace virtual environment. It uses host networking and mounts the workspace at
-`/workspace/ros2_kortex_ws`.
-
-For subsequent source changes, rebuild from inside the container:
-
-```bash
-colcon build \
-  --cmake-args \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
-  --executor sequential
-source install/setup.bash
-```
-
-Exit the shell with `exit`. The container is removed automatically, while files in the mounted
-workspace are preserved.
-
-Useful options include:
-
-```bash
-# Use a custom image and container name.
-./.devcontainer/dev-docker.sh --image my-kortex-image --name my-kortex-container
-
-# Skip the full Clarius dependency setup while building a lighter development image.
-RUN_CLARIUS_SETUP=false ./.devcontainer/dev-docker.sh
-
-# Skip compiling the copied workspace into the image (the helper's bind mount hides it).
-BUILD_WORKSPACE_IN_IMAGE=false ./.devcontainer/dev-docker.sh
-
-# Build selected packages in the mounted workspace before opening the shell.
-./.devcontainer/dev-docker.sh --build-packages "clarius_ros kortex_bringup"
-
-# Optionally download the private segmentation weights while building.
-CLARIUS_MODEL_URL='https://your-authorized-download/deeplabv3.pth' \
-  ./.devcontainer/dev-docker.sh
-
-# If an SSH agent is not running, select a host private key explicitly.
-HOST_SSH_KEY="$HOME/.ssh/id_ed25519" ./.devcontainer/dev-docker.sh
-
-# Display every supported option.
-./.devcontainer/dev-docker.sh --help
-```
-
-When `RUN_CLARIUS_SETUP=false` is used, install any missing workspace dependencies inside the
-container before building:
-
-```bash
-sudo apt-get update
-rosdep install --ignore-src --from-paths src -y -r
-```
-
-The full image installs Git LFS, imports `clarius_interface` and `multi-label_segmentation`, installs
-`clarius_interface/requirement.txt`, Pillow, and PySide6, then builds the ROS workspace. The
-segmentation model is not in Git; either provide an authorized `CLARIUS_MODEL_URL` during the image
-build or place
-`deeplabv3.pth` in `src/multilabel_segmentation/multi_label_segmentation/src/models/` afterward.
-Private Git repositories are cloned with BuildKit SSH forwarding. The key remains on the host and
-is exposed only to the repository-import build step; it is not copied into the image. The launcher
-prefers `SSH_AUTH_SOCK`, then `HOST_SSH_KEY`, then `~/.ssh/id_ed25519` or `~/.ssh/id_rsa`.
-The bundled `libcast.so` and `pyclariuscast.so` must match the Clarius App version because Cast does
-not provide forward or backward compatibility across App/API releases.
-The Dockerfile builds the workspace by default so a standalone image can resolve imported packages
-such as `clarius_ros`. `dev-docker.sh` overrides this to false because it bind-mounts the host
-workspace over the image workspace, which would hide image-internal build artifacts; its command
-examples build the mounted workspace instead. BuildKit also retains the pip download cache across
-rebuilt layers.
-
-Use `--build-packages "package_a package_b"` (or the `BUILD_PACKAGES` environment variable) to
-build selected packages every time the helper starts. When the value is empty, initialization only
-imports missing repositories and prepares the virtual environment; it does not build any packages.
-
-For graphical applications, the script forwards `DISPLAY` and mounts `/tmp/.X11-unix` when it is
-available. The host X server may also need to authorize the local container user.
-
-### Minimal MuJoCo build image
-
-For controller and headless MuJoCo development without the full development image, build the core
-image from the workspace root:
-
-```bash
-cd /path/to/ros2_kortex_ws
-docker build \
-  -t ros2-kortex-mujoco-core \
-  -f src/ros2_kortex/.devcontainer/Dockerfile.mujoco-core \
-  src/ros2_kortex
-```
-
-Run it with the workspace mounted:
-
-```bash
-docker run --rm -it \
-  --network host \
-  --ipc host \
-  -v "$PWD:/workspace/ros2_kortex_ws" \
-  -w /workspace/ros2_kortex_ws \
-  ros2-kortex-mujoco-core bash
-```
-
-Then build and source the required packages in the container:
-
-```bash
-source /opt/ros/humble/setup.bash
-if [ -f install/setup.bash ]; then source install/setup.bash; fi
-colcon build \
-  --packages-up-to admittance_controller mujoco_ros2_control kortex_bringup \
-  --cmake-args -DDOWNLOAD_UNITREE_H1_ASSETS=OFF \
-  --executor sequential
-source install/setup.bash
-```
-
-### Run MuJoCo with admittance and an applied force
-
-The MuJoCo GUI also draws each measured joint actuator torque at its joint: yellow is positive,
-purple is negative, and arrow length is proportional to torque magnitude. Run the requested home
-and all-zero pose demonstrations with:
-
-```bash
-ros2 run kortex_bringup demo_mujoco_pose.sh home
-ros2 run kortex_bringup demo_mujoco_pose.sh zero
-```
-
-To view the same measured joint torques in RViz2, launch the MuJoCo demo directly with RViz enabled:
-
-```bash
-ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
-  launch_gui:=true launch_rviz:=true initial_pose:=home force_test_fixture:=false
-```
-
-To interactiovely push or pull the robot in the MuJCo window, double-click a
-robot link to select it, then hold **Ctrl** and drag with the **right mouse
-button**. Ctrl + left-drag applies a rotational perturbation. Release the mouse
-button to stop applying the perturbation.
-
-Choose `initial_pose:=home` or `initial_pose:=zero`. The `Measured Joint Torques` group contains
-seven native RViz Wrench displays fed by `geometry_msgs/WrenchStamped` topics.
-
-The home pose is `[0, 15, 180, -130, 0, 55, 90]` degrees. Both commands keep the joint-effort
-wrench estimator and its blue estimated-force arrow enabled.
-
-To apply 10 N successively on world X, Y, and Z, allowing the arm to return and settle before the
-next independently initialized MuJoCo run, use:
-
-```bash
-ros2 run kortex_bringup demo_mujoco_forces.sh sequence 10 2 5
-```
-
-To demonstrate zero spring stiffness, where the arm retains its displacement after the force is
-removed, run (the final argument is the axis):
-
-```bash
-ros2 run kortex_bringup demo_mujoco_forces.sh stay 10 2 5 x
-```
-
-Stop the zero-spring demonstration with Ctrl-C. It deliberately does not apply a following force,
-because stiffness zero removes the automatic return-to-origin condition.
-
-Start the development container and ensure the workspace is built and sourced as described above.
-Then launch the seven-DoF Gen3 with the admittance controller and the MuJoCo force-test fixture:
-
-```bash
-ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
-  launch_gui:=true \
-  force_test_fixture:=true \
-  force_test_axis:=x \
-  force_test_force:=10.0 \
-  force_test_duration:=2.0 \
-  force_test_start_delay:=1.0 \
-  force_test_response:=true
-```
-
-The fixture creates a physical sliding plunger in MuJoCo and applies the requested signed contact
-force to the tool. It does not inject a synthetic wrench directly into the controller. The
-controller estimates the wrench with an impulse-momentum observer using `qfrc_actuator`, joint
-velocity, and the Pinocchio dynamics model; joint acceleration is not required.
-
-The force controls are:
-
-- `force_test_axis:=x`, `y`, or `z` selects the base/world force axis.
-- `force_test_force:=10.0` applies a positive 10 N force; use `-10.0` for the opposite direction.
-- `force_test_duration:=2.0` releases the physical load after two seconds of simulation time.
-- `force_test_start_delay:=1.0` lets controllers initialize before the timed load begins.
-- `force_test_mass:=8.0` sets the virtual translational mass in kilograms.
-- `force_test_joint_damping:=10.0` sets admittance inverse-kinematics joint damping.
-
-The controller also bounds the virtual motion with measured-state tracking anti-windup. Its
-`admittance.max_cartesian_acceleration`, `max_joint_acceleration`, `max_joint_velocity`,
-`max_joint_displacement`, and `max_tracking_error` parameters can be tuned in the controller YAML.
-The MuJoCo Gen3 position servos use lower-bandwidth PD gains to avoid high-frequency wrist chatter.
-- `force_test_response:=true` enables compliant motion on the selected axis.
-- `force_test_response:=false` keeps the robot holding position while the estimator continues to
-  measure the applied force.
-- `launch_gui:=false` runs the same test headlessly.
-
-For example, run an estimator-only test with a negative Y force:
-
-```bash
-ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
-  launch_gui:=false \
-  force_test_fixture:=true \
-  force_test_axis:=y \
-  force_test_force:=-10.0 \
-  force_test_response:=false
-```
-
-In another terminal, enter the running development container and inspect the controller state:
-
-```bash
-docker exec -it ros2-kortex-dev bash
-source /opt/ros/humble/setup.bash
-source /workspace/ros2_kortex_ws/install/setup.bash
-ros2 topic echo /admittance_controller/status
-```
-
-The estimated base-frame force is reported in `wrench_base.wrench.force`. Allow the simulation to
-settle before checking it. With the default force fixture, the selected component should be close
-to the requested signed force; the acceptance tolerance used for force testing is 0.5 N.
-
-To verify that the robot settles after the timed force is removed, keep the launch running and run
-this in another sourced container terminal. Match `--duration` to `force_test_duration`:
-
-```bash
-ros2 run kortex_bringup verify_mujoco_force_stop.py \
-  --duration 2.0 \
-  --start-delay 1.0 \
-  --settle-time 5.0 \
-  --observation-time 1.0
-```
-
-The check passes when every joint remains below 0.01 rad/s and drifts less than 0.002 rad over the
-post-settle observation window. Both tolerances can be overridden with command-line options. Run
-the same check with both `force_test_response:=false` (estimator-only hold) and
-`force_test_response:=true` (compliant response) when validating controller stability.
-
-When `force_test_response:=true`, the controller uses zero Cartesian stiffness with explicit
-Cartesian damping and bounded acceleration and velocity. The resulting displacement depends on
-the force duration and motion limits rather than a static `force / stiffness` ratio. After the
-force is released, move-and-stay mode holds the displaced pose. Tool motion can be observed in the
-GUI or from the base-to-tool transform:
-
-```bash
-ros2 run tf2_ros tf2_echo base_link end_effector_link
-```
-
-To establish the zero-force pose or verify that the estimator is near zero without contact, run
-the launch once with the fixture disabled:
-
-```bash
-ros2 launch kortex_bringup gen3_mujoco_admittance.launch.py \
-  launch_gui:=false \
-  force_test_fixture:=false
-```
-
-### Measure force from real Gen3 joint torques
-
-The real Gen3 hardware exports cyclic actuator torque readings through each joint's ROS 2
-`effort` state interface. Start the joint-effort wrench estimator in measure-only mode with:
-
-```bash
-ros2 launch kortex_bringup gen3_admittance.launch.py \
-  robot_ip:=192.168.1.10 \
-  use_fake_hardware:=false \
-  force_test_response:=false
-```
-
-The admittance controller starts at the measured joint positions and keeps every response axis
-disabled, so the estimate is published without force-driven motion. Inspect it with:
-
-```bash
-ros2 topic echo /admittance_controller/status
-```
-
-The estimated force is in `wrench_base.wrench.force`. Keep the arm unloaded initially and verify
-that the estimate is near zero before applying a known force. Accuracy depends on the URDF inertial
-model and the configured payload mass and center of gravity; pass the `payload_weight` and
-`payload_cog_*` launch arguments if the attached tool differs from the defaults.
-
-Only after validating both force and torque estimates should six-axis spring compliance be enabled
-with `force_test_response:=true`. The real Gen3 spring configuration uses the bounded-joint URDF
-limits directly; controller-side soft-limit weighting is disabled, while the hardware driver keeps
-its final 0.02 rad position guard.
-
-For free-hand scanning, use move-and-stay mode so the released pose becomes the new hold pose:
-
-```bash
-ros2 launch kortex_bringup gen3_admittance.launch.py \
-  robot_ip:=192.168.1.10 \
-  use_fake_hardware:=false \
-  force_test_response:=true \
-  admittance_mode:=move_and_stay
-```
-
-The real-robot profile filters the 1 kHz joint-effort wrench estimate and uses lower virtual
-rotational inertia than translation so an operator can command roll, pitch, and yaw with normal
-one-hand moments. Before scanning, hold the arm unloaded and confirm that all six components of
-`/admittance_controller/status.wrench_base.wrench` settle near zero. Incorrect payload weight or
-center of gravity appears primarily as a persistent torque and can cause unwanted rotation.
-
-To identify the center of mass of an attached rigid payload from static poses, first launch in
-measure-only mode with the Clarius model enabled:
-
-```bash
-ros2 launch kortex_bringup gen3_admittance.launch.py \
-  robot_ip:=192.168.1.10 \
-  use_fake_hardware:=false \
-  include_clarius:=true \
-  force_test_response:=false
-```
-
-In another terminal, run the interactive calibration using the measured combined mass:
-
-```bash
-ros2 run kortex_bringup estimate_payload_com.py --mass 0.536 --poses 15
-```
-
-Before sampling, the script publishes the 15 numbered target orientations to
-`/payload_com_calibration/poses`. To inspect them without starting calibration, run:
-
-```bash
-ros2 run kortex_bringup estimate_payload_com.py --mass 0.536 --poses 15 --preview-only
-```
-
-The RViz arrows share the current `clarius_base_link` position and show the target direction of its
-positive Z axis. They are orientation references only: the script does not command robot motion.
-
-At each prompt, move the arm slowly to a substantially different tool orientation, stop, and press
-Enter. The script rejects moving samples, robustly fits the CoM in `clarius_base_link`, and fits a
-constant offset for each joint so sensor zero error is not confused with payload gravity. Keep the
-complete mount, probe, fasteners, and normally supported cable section installed throughout the
-calibration. Copy the printed inertial origin into the `clarius_base_link` URDF, rebuild, and restart
-the launch. Leave `payload_weight:=0.0` because the 0.536 kg mass is then already represented in the
-Pinocchio model. Validate the result on several stationary poses that were not part of the fit.
-
----
-
-## CLARIUS SETUP
-
-The Clarius description can be used by MoveIt, rosbag replay, and the Gen3 admittance-control
-launch. In the admittance launch it is attached through the Kinova wrist mount defined in the
-Gen3 description.
-
-To start Gen3 admittance control, the Clarius Wi-Fi interface and segmentation, and one RViz window containing the robot, applied wrench, raw ultrasound, and segmentation image, run:
-
-```bash
-ros2 launch kortex_bringup gen3_admittance_clarius.launch.py \
-  robot_ip:=192.168.1.10 \
-  use_fake_hardware:=false \ force_test_response:=true \
-  start_clarius:=true \
-  vision:=true \
-  launch_rviz:=true \ 
-  clarius_config_file:=/workspace/ros2_kortex_ws/src/clarius_interface/clarius_ros/config/clarius.yaml
-```
-
-The wrapper always attaches the Clarius model and disables the gripper.
-
-1. Make sure that `colcon`, its extensions, and `vcs` are installed:
-
-    ```bash
-    sudo apt install python3-colcon-common-extensions python3-vcstool
-    ```
-
-2. Create a new ROS2 workspace:
-
-    ```bash
-    export COLCON_WS=~/workspace/ros2_kortex_ws
-    mkdir -p $COLCON_WS/src
-    ```
-
-3. Pull relevant packages:
-   
-    ```bash
-    cd $COLCON_WS
-    git clone -b tz/clarius_scanner --single-branch git@github.com:ripl-lab/ros2_kortex.git src/ros2_kortex
-    vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex.$ROS_DISTRO.repos
-    vcs import src --skip-existing --input src/ros2_kortex/ros2_kortex-not-released.$ROS_DISTRO.repos
-    ```
-
-4. Install MoveIt 2
-
-    ```bash
-    sudo apt install ros-humble-moveit 
-    ```
-
-5. Install dependencies, compile, and source the workspace:
-  - `--executor sequential` is recomended to prevent crashing your laptop
-
-    ```bash
-    rosdep install --ignore-src --from-paths src -y -r
-    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --executor sequential
-    ```
-
-6. Source the previously built workspace using the following command:
-   
-    ```bash
-    echo 'source ~/workspace/ros2_kortex_ws/install/setup.bash' >> ~/.bashrc
-    ```
-
-7. Launch the bringup to verify 
-
-    ```bash
-    ros2 launch kortex_description view_robot.launch.py
-    ```
-
-### Admittance control
-
-Enable the mount and probe model with `include_clarius:=true`:
-
-```bash
-ros2 launch kortex_bringup gen3_admittance.launch.py \
-  robot_ip:=192.168.1.10 \
-  use_fake_hardware:=false \
-  force_test_response:=false \
-  vision:=true \
-  include_clarius:=true \
-  launch_rviz:=true
-```
-
-The resulting fixed-link chain is
-`end_effector_link -> kinova_mount_link -> clarius_base_link -> clarius_sensor_frame`.
-Start with `force_test_response:=false` while validating the payload model and gravity
-compensation.
-
-### MoveIt
-
-- For visualization 
-
-    ```bash
-    ros2 launch kinova_gen3_7dof_robotiq_2f_85_moveit_config robot_no_gripper.launch.py \
-      robot_ip:=yyy.yyy.yyy.yyy \
-      use_fake_hardware:=true
-    ```
-- For real robot
-
-    ```bash
-    ros2 launch kinova_gen3_7dof_robotiq_2f_85_moveit_config robot_no_gripper.launch.py \
-      robot_ip:=192.168.1.10
-    ```
-
-### Bag Replay
-
-To replay recorded Gen3 transforms together with a Clarius processed image:
-
-```bash
-ros2 launch kortex_bringup replay_kortex_bag.launch.py \
-  bag:=/absolute/path/to/rosbag
-```
-
-The launch uses simulated time and replays `/tf`, `/tf_static`, and
-`/clarius/processed_image`. It defaults to a 7-DoF Gen3 without a gripper. Do not run hardware or fake controllers simultaneously because their TF output can compete with the recorded transforms.
-
+- Repository-specific parameters, algorithms, calibration procedures, and implementation details belong in the README of the repository that owns them.
+- This README describes only the integrated workflow and the interfaces between repositories.
 
 ---
 
