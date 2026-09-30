@@ -198,6 +198,22 @@ ROS2 KINOVA KORTEX™ is the official ROS2 package to interact with KINOVA KORTE
 	git clone git@github.com:ripl-lab/ros2_kortex.git
 	```
 
+5. Create a workspace-level directory for rosbag files. Keeping bags outside `src/ros2_kortex` makes them available through the development container's workspace mount without copying them into the Docker image.
+
+	```bash
+	mkdir -p ~/workspace/clarius_ws/bags
+	```
+
+6. Move the segmentation checkpoint into the model directory. The default configuration expects the checkpoint to be named `unet.pth`.
+
+	```bash
+	mkdir -p ~/workspace/clarius_ws/src/multi-label_segmentation/multi_label_segmentation/src/models
+	mv ~/Downloads/unet.pth \
+		~/workspace/clarius_ws/src/multi-label_segmentation/multi_label_segmentation/src/models/unet.pth
+	```
+
+	If the checkpoint is stored somewhere else, replace `~/Downloads/unet.pth` with its actual path.
+
 The host workspace is named `clarius_ws`; the Docker helper mounts it at the fixed internal path `/workspace/ros2_kortex_ws`, so commands run inside the container continue to use that internal path.
 
 #### Build and Run
@@ -438,7 +454,7 @@ No real robot, Clarius probe, or RealSense camera is required for replay.
 flowchart TB
     subgraph Hardware
         direction TB
-        ROBOT@{ img: "doc/resources/kinova-gen3-7dof-robotiq-2f-85.jpg", label: "Kinova Gen3", pos: "b", w: 120, h: 120, constraint: "on" }
+        ROBOT["Kinova Gen3"]
         PROBE["Clarius probe"]
         CAMERA["RealSense camera"]
     end
