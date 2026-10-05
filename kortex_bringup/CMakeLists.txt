@@ -17,6 +17,8 @@ install(PROGRAMS
   scripts/demo_mujoco_forces.sh
   scripts/joint_torque_wrenches.py
   scripts/save_pointcloud_ply.py
+  scripts/compute_cloud_cad_error.py
+  scripts/generate_cloud_cad_test_data.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

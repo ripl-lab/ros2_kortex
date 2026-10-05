@@ -331,6 +331,32 @@ The host workspace is named `clarius_ws`; the Docker helper mounts it at the fix
 		constrain_eef_orientation:=true
 	```
 
+#### Point-cloud-to-CAD Error Check
+
+CloudCompare runs on the host for registration; the analysis scripts run inside the container. Files saved under the host workspace are available in the container under `/workspace/ros2_kortex_ws`.
+
+1. Generate a deliberately misaligned test cloud and its CAD reference:
+
+	```bash
+	mkdir -p /workspace/ros2_kortex_ws/data/cad_test
+	ros2 run kortex_bringup generate_cloud_cad_test_data.py \
+		--output-dir /workspace/ros2_kortex_ws/data/cad_test
+	```
+
+2. On the host, open `test_cloud.ply` and `test_cad.stl`in CloudCompare and run ICP, export `test_cloud_icp_aligned.ply`.
+
+3. Compute point-to-CAD-triangle errors inside the container:
+
+	```bash
+	ros2 run kortex_bringup compute_cloud_cad_error.py \
+		/workspace/ros2_kortex_ws/data/cad_test/test_cloud_icp_aligned.ply \
+		/workspace/ros2_kortex_ws/data/cad_test/test_cad.stl \
+		--icp-aligned \
+		--tolerances 0.1 0.2 0.4 \
+		--csv /workspace/ros2_kortex_ws/data/cad_test/errors.csv \
+		--summary-json /workspace/ros2_kortex_ws/data/cad_test/summary.json
+	```
+
 ### Collect Data on the Real Robot
 
 1. Start the real-robot master launch and wait until the robot, Clarius, and RealSense streams are stable.

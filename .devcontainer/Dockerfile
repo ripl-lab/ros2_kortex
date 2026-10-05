@@ -105,6 +105,7 @@ COPY . ${COLCON_WS}/src/ros2_kortex
 RUN --mount=type=ssh --mount=type=cache,target=/root/.cache/pip \
     python3 -m venv --system-site-packages ${COLCON_WS}/.venv \
     && ${COLCON_WS}/.venv/bin/python -m pip install --upgrade pip 'setuptools<80' wheel \
+    && /usr/bin/python3 -m pip install open3d==0.19.0 \
     && (rosdep update --rosdistro ${ROS_DISTRO} || true) \
     && if [ "${RUN_CLARIUS_SETUP}" = "true" ]; then \
     . /opt/ros/${ROS_DISTRO}/setup.sh \
