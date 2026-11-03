@@ -556,7 +556,7 @@
            This is the CAD mount frame, not the camera-detected tag36h11:0 frame.
            Payload inertia remains lumped in clarius_base_link. -->
       <joint name="${prefix}apriltag_mount_joint" type="fixed">
-        <origin xyz="0.0000279472186212604 0.071496913495256 -0.04925" rpy="0 0 0" />
+        <origin xyz="0 -0.0430030803027871 -0.0492500000000002" rpy="0 0 0" />
         <parent link="${prefix}kinova_mount_link" />
         <child link="${prefix}apriltag_mount_link" />
       </joint>
