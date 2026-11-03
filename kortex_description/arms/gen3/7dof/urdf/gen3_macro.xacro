@@ -529,13 +529,13 @@
       <xacro:include filename="$(find clarius_description)/urdf/clarius_macro.xacro" />
 
       <joint name="${prefix}kinova_mount_joint" type="fixed">
-        <origin xyz="0 0 0.003" rpy="0 ${PI} 0" />
+        <origin xyz="0 0 0.003" rpy="${-PI/2} ${PI} 0" />
         <parent link="${prefix}end_effector_link" />
         <child link="${prefix}kinova_mount_link" />
       </joint>
       <link name="${prefix}kinova_mount_link">
         <visual>
-          <origin xyz="0 0 0" rpy="-1.5708 0 0" />
+          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
             <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="1 1 1" />
           </geometry>
@@ -544,15 +544,40 @@
           </material>
         </visual>
         <collision>
-          <origin xyz="0 0 0" rpy="-1.5708 0 0" />
+          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
             <mesh filename="file://$(find kortex_description)/arms/gen3/meshes/kinova_mount.stl" scale="1 1 1" />
           </geometry>
         </collision>
       </link>
 
+      <!-- SolidWorks assembly_apriltag_urdf export: kinova_mount_link uses the
+           exported root frame; its rotation is applied in kinova_mount_joint.
+           This is the CAD mount frame, not the camera-detected tag36h11:0 frame.
+           Payload inertia remains lumped in clarius_base_link. -->
+      <joint name="${prefix}apriltag_mount_joint" type="fixed">
+        <origin xyz="0.0000279472186212604 0.071496913495256 -0.04925" rpy="0 0 0" />
+        <parent link="${prefix}kinova_mount_link" />
+        <child link="${prefix}apriltag_mount_link" />
+      </joint>
+      <link name="${prefix}apriltag_mount_link">
+        <visual>
+          <geometry>
+            <mesh filename="package://kortex_description/arms/gen3/meshes/apriltag_mount.stl" scale="1 1 1" />
+          </geometry>
+          <material name="${prefix}apriltag_mount_red">
+            <color rgba="0.694117647058824 0.0980392156862745 0.0980392156862745 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+            <mesh filename="package://kortex_description/arms/gen3/meshes/apriltag_mount.stl" scale="1 1 1" />
+          </geometry>
+        </collision>
+      </link>
+
       <xacro:load_clarius parent="${prefix}kinova_mount_link" prefix="${prefix}">
-        <origin xyz="0 0 -0.115" rpy="${PI/2} ${PI} ${PI}" />
+        <origin xyz="0 0.115 0" rpy="0 0 0" />
       </xacro:load_clarius>
     </xacro:if>
     <xacro:if value="${vision}">
